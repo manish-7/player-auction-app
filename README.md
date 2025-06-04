@@ -49,6 +49,34 @@ A comprehensive React-based application for conducting IPL-style cricket player 
 4. **Open your browser**
    Navigate to `http://localhost:5173`
 
+## 🌐 Deployment
+
+### GitHub Pages Deployment
+
+This app is configured for automatic deployment to GitHub Pages.
+
+#### Automatic Deployment
+1. **Push to main branch**: The app automatically deploys when you push to the main branch
+2. **GitHub Actions**: Uses automated workflow for building and deployment
+3. **Live URL**: Access your app at `https://yourusername.github.io/player-auction-app/`
+
+#### Manual Deployment
+```bash
+# Build and deploy manually
+npm run deploy
+```
+
+#### Setup GitHub Pages
+1. Go to your repository settings
+2. Navigate to "Pages" section
+3. Select "GitHub Actions" as the source
+4. The workflow will automatically deploy on the next push
+
+#### Configuration
+- **Base URL**: Configured for GitHub Pages subdirectory
+- **Build Output**: Optimized production build in `dist/` folder
+- **404 Handling**: Custom 404.html for SPA routing support
+
 ## 📋 How to Use
 
 ### Step 1: Tournament Setup

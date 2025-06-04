@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuctionStore } from './store/auctionStore';
 import TournamentSetup from './components/TournamentSetup';
 import PlayerInventory from './components/PlayerInventory';

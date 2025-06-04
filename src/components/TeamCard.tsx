@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, Check, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { Users, Check, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import type { Team } from '../types';
 import { formatCurrency } from '../utils/excelUtils';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Timer, Trophy, SkipForward, Zap, Star, Undo } from 'lucide-react';
+import { Timer, Trophy, SkipForward, Zap, Undo } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency } from '../utils/excelUtils';
 import TeamCard from './TeamCard';
@@ -17,7 +17,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     passTeam,
     soldPlayer,
     unsoldPlayer,
-    nextPlayer,
+
     getCurrentPlayer,
     getEligibleTeams,
     startAuction,

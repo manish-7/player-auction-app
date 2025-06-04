@@ -21,7 +21,7 @@ const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
     setTeamNames(updatedNames);
   };
 
-  const handleSaveTeamName = (index: number) => {
+  const handleSaveTeamName = () => {
     setEditingIndex(null);
     setupTeams(teamNames);
   };
@@ -154,13 +154,13 @@ const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
                           placeholder={`Team ${index + 1}`}
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
-                              handleSaveTeamName(index);
+                              handleSaveTeamName();
                             }
                           }}
                           autoFocus
                         />
                         <button
-                          onClick={() => handleSaveTeamName(index)}
+                          onClick={() => handleSaveTeamName()}
                           className="btn-primary text-sm py-1 px-2"
                         >
                           Save
