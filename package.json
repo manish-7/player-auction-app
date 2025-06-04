@@ -1,5 +1,6 @@
 {
   "name": "player-auction-app",
+  "homepage": "https://manish-7.github.io/player-auction-app/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,6 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "predeploy": "npm run build",
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
