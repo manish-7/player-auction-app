@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Excel File with Blank Base Price</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Test Excel File with Blank Base Price</h1>
+    <button onclick="generateTestFile()">Download Test Excel File</button>
+    <p>This file contains players with blank base prices to test the fix.</p>
+
+    <script>
+        function generateTestFile() {
+            const testData = [
+                {
+                    'Player Name': 'Test Player 1',
+                    'Role': 'Batsman',
+                    'Rating': 85,
+                    // No Base Price - should default to 100
+                },
+                {
+                    'Player Name': 'Test Player 2',
+                    'Role': 'Bowler',
+                    // No Base Price or Rating
+                },
+                {
+                    'Player Name': 'Test Player 3',
+                    'Base Price': 150,
+                    'Role': 'All-Rounder',
+                    'Rating': 90,
+                },
+                {
+                    'Player Name': 'Test Player 4',
+                    // Only name - all other fields should use defaults
+                },
+                {
+                    'Player Name': 'Test Player 5',
+                    'Base Price': '', // Empty string - should default to 100
+                    'Role': 'Wicket-Keeper',
+                    'Rating': 75,
+                },
+            ];
+
+            const worksheet = XLSX.utils.json_to_sheet(testData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Players');
+
+            // Download the file
+            XLSX.writeFile(workbook, 'test_blank_price_players.xlsx');
+        }
+    </script>
+</body>
+</html>
