@@ -182,20 +182,6 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
           />
         </div>
 
-        {/* Required Format Info */}
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h4 className="font-medium text-yellow-900 mb-2">Required Excel Format:</h4>
-          <div className="text-sm text-yellow-800">
-            <p className="mb-2">Your Excel file must contain the following columns:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li><strong>Player Name</strong> (Required): Full name of the player</li>
-              <li><strong>Role</strong> (Optional): Batsman, Bowler, All-Rounder, or Wicket-Keeper (default: Batsman)</li>
-              <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: 100)</li>
-              <li><strong>Rating</strong> (Optional): Player skill rating from 0-100</li>
-            </ul>
-          </div>
-        </div>
-
         {/* Validation Results */}
         {validationResult && (
           <div className="mt-6">
@@ -254,6 +240,20 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
             )}
           </div>
         )}
+        
+        {/* Required Format Info */}
+        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="font-medium text-yellow-900 mb-2">Required Excel Format:</h4>
+          <div className="text-sm text-yellow-800">
+            <p className="mb-2">Your Excel file must contain the following columns:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li><strong>Player Name</strong> (Required): Full name of the player</li>
+              <li><strong>Role</strong> (Optional): Batsman, Bowler, All-Rounder, or Wicket-Keeper (default: Batsman)</li>
+              <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: 100)</li>
+              <li><strong>Rating</strong> (Optional): Player skill rating from 0-100</li>
+            </ul>
+          </div>
+        </div>
 
         {/* Navigation */}
         <div className="flex justify-between pt-6 mt-6 border-t border-gray-200">
