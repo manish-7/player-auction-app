@@ -92,10 +92,11 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
     
     // Check base price (optional)
     let basePrice = minimumBid; // Use tournament's minimum bid as default
-    if (row['Base Price'] !== undefined && row['Base Price'] !== null && row['Base Price'] !== '') {
-      const price = Number(row['Base Price']);
+    const basePriceValue = row['Base Price'];
+    if (basePriceValue !== undefined && basePriceValue !== null && String(basePriceValue).trim() !== '') {
+      const price = Number(basePriceValue);
       if (isNaN(price) || price < 0) {
-        errors.push(`Row ${rowNumber}: Invalid base price "${row['Base Price']}". Must be a positive number`);
+        errors.push(`Row ${rowNumber}: Invalid base price "${basePriceValue}". Must be a positive number`);
         return;
       }
       basePrice = price;
