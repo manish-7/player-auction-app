@@ -32,7 +32,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const [bidAmount, setBidAmount] = useState<number>(0);
   const [timer, setTimer] = useState(tournament?.settings.timerDuration || 30);
   const [showBidInput, setShowBidInput] = useState(false);
-  const [allTeamsExpanded, setAllTeamsExpanded] = useState(false);
+  const [allTeamsExpanded, setAllTeamsExpanded] = useState<boolean | null>(null);
   const [showEndAuctionDialog, setShowEndAuctionDialog] = useState(false);
 
   const currentPlayer = getCurrentPlayer();
@@ -326,10 +326,24 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               Min: <span className="font-semibold text-green-600">{formatCurrency(minBid)}</span>
             </div>
             <button
-              onClick={() => setAllTeamsExpanded(!allTeamsExpanded)}
+              onClick={() => setShowEndAuctionDialog(true)}
+              className="flex items-center text-sm text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+              title="Manually end the auction"
+            >
+              <Trophy className="w-4 h-4 mr-1" />
+              <span>End Auction</span>
+            </button>
+            <button
+              onClick={() => {
+                if (allTeamsExpanded === true) {
+                  setAllTeamsExpanded(false); // Collapse all
+                } else {
+                  setAllTeamsExpanded(true); // Expand all
+                }
+              }}
               className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors"
             >
-              {allTeamsExpanded ? (
+              {allTeamsExpanded === true ? (
                 <>
                   <span className="mr-1">Collapse All</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,6 +388,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                     setShowBidInput(true);
                   }
                 }}
+                onQuickBid={() => handleQuickBid(team.id)}
                 onPass={() => handlePassTeam(team.id)}
                 disabled={!isEligible}
               />
@@ -432,27 +447,54 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                         placeholder={`Min: ${formatCurrency(minBid)} • Max: ${formatCurrency(maxBid)}`}
                       />
                     </div>
-                    <div className="flex space-x-1">
-                      {[settings.bidIncrement, settings.bidIncrement * 2].map((increment) => {
-                        const newAmount = minBid + increment;
-                        return newAmount <= maxBid ? (
-                          <button
-                            key={increment}
-                            onClick={() => setBidAmount(newAmount)}
-                            className="btn-secondary text-xs py-1 px-2"
-                          >
-                            +{formatCurrency(increment)}
-                          </button>
-                        ) : null;
-                      })}
-                      {maxBid > minBid && (
-                        <button
-                          onClick={() => setBidAmount(maxBid)}
-                          className="btn-secondary text-xs py-1 px-2 bg-yellow-100 text-yellow-800 border-yellow-300"
-                        >
-                          Max
-                        </button>
-                      )}
+                    <div className="flex flex-wrap gap-1">
+                      {(() => {
+                        // Generate smart quick bid increments
+                        const baseIncrement = settings.bidIncrement;
+                        const currentBid = auctionState.highestBid?.amount || (currentPlayer?.basePrice || tournament?.settings.minimumBid || 100);
+
+                        // Create multiple increment options based on current bid scale
+                        const increments = [
+                          baseIncrement,                    // 1x increment
+                          baseIncrement * 2,               // 2x increment
+                          baseIncrement * 5,               // 5x increment
+                          baseIncrement * 10,              // 10x increment
+                          Math.round(currentBid * 0.1),   // 10% of current bid
+                          Math.round(currentBid * 0.25),  // 25% of current bid
+                        ].filter((inc, index, arr) => {
+                          // Remove duplicates and ensure minimum increment
+                          return inc >= baseIncrement && arr.indexOf(inc) === index;
+                        }).sort((a, b) => a - b).slice(0, 5); // Show max 5 options
+
+                        const buttons = increments.map((increment) => {
+                          const newAmount = minBid + increment;
+                          return newAmount <= maxBid ? (
+                            <button
+                              key={increment}
+                              onClick={() => setBidAmount(newAmount)}
+                              className="btn-secondary text-xs py-1 px-2 whitespace-nowrap"
+                            >
+                              +{formatCurrency(increment)}
+                            </button>
+                          ) : null;
+                        }).filter(Boolean);
+
+                        // Add Max button if there's space and max bid is significantly higher than min bid
+                        if (maxBid > minBid * 1.5) {
+                          buttons.push(
+                            <button
+                              key="max"
+                              onClick={() => setBidAmount(maxBid)}
+                              className="btn-secondary text-xs py-1 px-2 bg-yellow-100 text-yellow-800 border-yellow-300 whitespace-nowrap font-medium"
+                              title={`Maximum possible bid: ${formatCurrency(maxBid)}`}
+                            >
+                              Max
+                            </button>
+                          );
+                        }
+
+                        return buttons;
+                      })()}
                     </div>
                     <button
                       onClick={handlePlaceBid}
@@ -550,9 +592,22 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 End Auction?
               </h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to end the auction? All teams have completed their squads.
+              <p className="text-gray-600 mb-4">
+                {allTeamsFull
+                  ? "Are you sure you want to end the auction? All teams have completed their squads."
+                  : "Are you sure you want to end the auction early? Some teams may not have completed their squads yet."
+                }
               </p>
+              {!allTeamsFull && (
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+                  <div className="text-gray-700 mb-2 font-medium">Current Status:</div>
+                  <div className="space-y-1 text-gray-600">
+                    <div>Players sold: {tournament.players.filter(p => p.soldPrice).length} / {tournament.players.length}</div>
+                    <div>Teams with space: {tournament.teams.filter(team => team.players.length < team.maxPlayers).length} / {tournament.teams.length}</div>
+                    <div>Eligible teams: {eligibleTeams.length} / {tournament.teams.length}</div>
+                  </div>
+                </div>
+              )}
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowEndAuctionDialog(false)}

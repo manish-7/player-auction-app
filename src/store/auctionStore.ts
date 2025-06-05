@@ -94,7 +94,7 @@ const initialAuctionState: AuctionState = {
 };
 
 const defaultSettings: AuctionSettings = {
-  bidIncrement: 10, // ₹10 for small budget auctions
+  bidIncrement: 1, // ₹1 minimum increment (will be calculated dynamically)
   auctionTimer: 30,
   autoPassTimer: 10,
 };
@@ -151,7 +151,7 @@ export const useAuctionStore = create<AuctionStore>()(
         // Calculate appropriate bid increment based on minimum bid
         const minimumBid = tournament.settings.minimumBid;
         const calculatedBidIncrement = Math.max(
-          10, // Minimum increment of ₹10
+          1, // Minimum increment of ₹1
           Math.round(minimumBid * 0.1) // 10% of minimum bid
         );
 
@@ -338,37 +338,58 @@ export const useAuctionStore = create<AuctionStore>()(
           if (tournament.settings.enableUnsoldPlayerReturn) {
             const unsoldPlayers = tournament.players.filter(p => p.isUnsold && !p.soldPrice);
 
-            if (unsoldPlayers.length > 0 && tournament.settings.unsoldPlayerReturnRound > 0) {
-              // Reset unsold players and start another round
-              const resetPlayers = tournament.players.map(player =>
-                player.isUnsold ? { ...player, isUnsold: false } : player
+            if (unsoldPlayers.length > 0) {
+              // Check if any team still has space and can afford any unsold player
+              const teamsWithSpace = tournament.teams.filter(team => team.players.length < team.maxPlayers);
+              const canAnyTeamAffordAnyPlayer = teamsWithSpace.some(team =>
+                unsoldPlayers.some(player =>
+                  team.remainingBudget >= (player.basePrice || tournament.settings.minimumBid)
+                )
               );
 
-              set((state) => ({
-                tournament: state.tournament ? {
-                  ...state.tournament,
-                  players: resetPlayers,
-                  currentPlayerIndex: 0,
-                  settings: {
-                    ...state.tournament.settings,
-                    unsoldPlayerReturnRound: state.tournament.settings.unsoldPlayerReturnRound - 1,
+              if (canAnyTeamAffordAnyPlayer) {
+                // Reset unsold players and shuffle them randomly
+                const soldPlayers = tournament.players.filter(p => p.soldPrice);
+                const resetUnsoldPlayers = tournament.players
+                  .filter(p => p.isUnsold && !p.soldPrice)
+                  .map(player => ({ ...player, isUnsold: false }));
+
+                // Shuffle the unsold players randomly
+                const shuffledUnsoldPlayers = [...resetUnsoldPlayers].sort(() => Math.random() - 0.5);
+
+                // Combine sold players with shuffled unsold players
+                const reorderedPlayers = [...soldPlayers, ...shuffledUnsoldPlayers];
+
+                set((state) => ({
+                  tournament: state.tournament ? {
+                    ...state.tournament,
+                    players: reorderedPlayers,
+                    currentPlayerIndex: soldPlayers.length, // Start from first unsold player
+                  } : null,
+                  auctionState: {
+                    ...initialAuctionState,
+                    isActive: true,
                   },
-                } : null,
-                auctionState: {
-                  ...initialAuctionState,
-                  isActive: true,
-                },
-              }));
-              return;
+                }));
+                return;
+              }
             }
           }
 
-          // Check if any team can still buy players and has budget for remaining players
-          const eligibleTeams = get().getEligibleTeams();
+          // Check if all teams are full or no team can afford any remaining player
+          const allTeamsFull = tournament.teams.every(team => team.players.length >= team.maxPlayers);
           const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold);
+          const teamsWithSpace = tournament.teams.filter(team => team.players.length < team.maxPlayers);
 
-          // If no teams can buy any remaining players, end auction
-          if (eligibleTeams.length === 0 || remainingPlayers.length === 0) {
+          // Check if any team with space can afford any remaining player
+          const canAnyTeamAffordAnyPlayer = teamsWithSpace.some(team =>
+            remainingPlayers.some(player =>
+              team.remainingBudget >= (player.basePrice || tournament.settings.minimumBid)
+            )
+          );
+
+          // End auction only if all teams are full OR no team can afford any remaining player
+          if (allTeamsFull || !canAnyTeamAffordAnyPlayer || remainingPlayers.length === 0) {
             set((state) => ({
               tournament: state.tournament
                 ? { ...state.tournament, isAuctionCompleted: true }
@@ -383,18 +404,14 @@ export const useAuctionStore = create<AuctionStore>()(
             return;
           }
 
-          // End auction
-          set((state) => ({
-            tournament: state.tournament
-              ? { ...state.tournament, isAuctionCompleted: true }
-              : null,
-            auctionState: { ...initialAuctionState, isActive: false },
+          // If we reach here, there are still players and teams that can afford them
+          // This shouldn't happen in normal flow, but just in case
+          set(() => ({
+            auctionState: {
+              ...initialAuctionState,
+              isActive: true,
+            },
           }));
-
-          // Auto-save the completed tournament
-          setTimeout(() => {
-            get().saveTournament();
-          }, 100);
           return;
         }
 
@@ -419,7 +436,7 @@ export const useAuctionStore = create<AuctionStore>()(
       // Helper function to calculate appropriate bid increment
       calculateBidIncrement: (minimumBid: number) => {
         return Math.max(
-          10, // Minimum increment of ₹10
+          1, // Minimum increment of ₹1
           Math.round(minimumBid * 0.1) // 10% of minimum bid
         );
       },
@@ -582,7 +599,7 @@ export const useAuctionStore = create<AuctionStore>()(
           // Recalculate bid increment based on current minimum bid
           const minimumBid = state.tournament.settings.minimumBid;
           const calculatedBidIncrement = Math.max(
-            10, // Minimum increment of ₹10
+            1, // Minimum increment of ₹1
             Math.round(minimumBid * 0.1) // 10% of minimum bid
           );
 
@@ -639,7 +656,7 @@ export const useAuctionStore = create<AuctionStore>()(
         // Recalculate bid increment based on loaded tournament's minimum bid
         const minimumBid = savedTournament.tournament.settings.minimumBid;
         const calculatedBidIncrement = Math.max(
-          10, // Minimum increment of ₹10
+          1, // Minimum increment of ₹1
           Math.round(minimumBid * 0.1) // 10% of minimum bid
         );
 

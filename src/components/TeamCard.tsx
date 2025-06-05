@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Users, Check, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Check, Star } from 'lucide-react';
 import type { Team } from '../types';
 import { formatCurrency } from '../utils/excelUtils';
 
@@ -26,10 +26,11 @@ interface TeamCardProps {
   isHighestBidder: boolean;
   onSelect: () => void;
   onPass: () => void;
+  onQuickBid?: () => void;
   disabled?: boolean;
   maxBid?: number;
   minBid?: number;
-  forceExpanded?: boolean;
+  forceExpanded?: boolean | null;
 }
 
 const TeamCard: React.FC<TeamCardProps> = ({
@@ -39,15 +40,23 @@ const TeamCard: React.FC<TeamCardProps> = ({
   isHighestBidder,
   onSelect,
   onPass,
+  onQuickBid,
   disabled = false,
   maxBid,
   minBid,
-  forceExpanded = false,
+  forceExpanded = null,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use forceExpanded to override local state
-  const shouldShowExpanded = forceExpanded || isExpanded;
+  // Reset local state when forceExpanded changes, but only if it's a definitive state
+  useEffect(() => {
+    if (forceExpanded !== null) {
+      setIsExpanded(forceExpanded);
+    }
+  }, [forceExpanded]);
+
+  // Use forceExpanded when set, otherwise use local state
+  const shouldShowExpanded = forceExpanded !== null ? forceExpanded : isExpanded;
   const cardClasses = `
     relative p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer min-h-[140px]
     ${isHighestBidder
@@ -97,63 +106,36 @@ const TeamCard: React.FC<TeamCardProps> = ({
         </div>
 
         {/* Right: Action Buttons */}
-        <div className="flex flex-col items-end space-y-1 ml-2">
-          {/* Expand/Collapse Button */}
-          {team.players.length > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
-              }}
-              className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              title={`${shouldShowExpanded ? 'Hide' : 'Show'} team players`}
-            >
-              {shouldShowExpanded ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-          )}
-
+        <div className="flex flex-col items-end space-y-2 ml-2">
           {isEligible && !disabled && (
             <>
-              {(() => {
-                // Check if team can afford the minimum bid
-                const canAffordBid = maxBid !== undefined && minBid !== undefined && maxBid >= minBid;
+              {/* Prominent One-Click BID Button */}
+              {onQuickBid && minBid !== undefined && maxBid !== undefined && maxBid >= minBid && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuickBid();
+                  }}
+                  className="py-5 px-4 rounded-md text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors min-w-[100px] shadow-sm"
+                  title={`Quick bid: ${formatCurrency(minBid)}`}
+                >
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>⚡</span>
+                    <span>BID {formatCurrency(minBid)}</span>
+                  </div>
+                </button>
+              )}
 
-                return (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (canAffordBid) {
-                          onSelect();
-                        }
-                      }}
-                      disabled={!canAffordBid}
-                      className={`py-2 px-4 rounded-md text-sm font-medium transition-colors min-w-[80px] ${
-                        !canAffordBid
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : isSelected
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      }`}
-                    >
-                      {isSelected ? 'Bid' : 'Select'}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPass();
-                      }}
-                      className="py-2 px-4 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors min-w-[80px]"
-                    >
-                      Pass
-                    </button>
-                  </>
-                );
-              })()}
+              {/* Pass Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPass();
+                }}
+                className="py-2 px-4 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors min-w-[100px]"
+              >
+                Pass
+              </button>
             </>
           )}
 

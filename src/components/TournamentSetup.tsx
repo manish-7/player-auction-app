@@ -68,7 +68,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
 
     // Calculate minimum reasonable minimum bid (at least 0.1% of average player budget)
     const avgPlayerBudget = budget / playersPerTeam;
-    const minReasonableMinBid = Math.max(10, Math.floor(avgPlayerBudget * 0.001));
+    const minReasonableMinBid = Math.max(1, Math.floor(avgPlayerBudget * 0.001));
 
     if (minimumBid > maxReasonableMinBid) {
       return `Minimum bid too high! Teams won't be able to afford ${playersPerTeam} players. Maximum recommended: ${formatCurrency(maxReasonableMinBid)}`;
@@ -256,13 +256,13 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                 id="minimumBid"
                 {...register('minimumBid', {
                   required: 'Minimum bid is required',
-                  min: { value: 10, message: 'Minimum bid must be at least ₹10' },
+                  min: { value: 1, message: 'Minimum bid must be at least ₹1' },
                   max: { value: 200000000, message: 'Maximum minimum bid is ₹20 Crores' },
                   validate: validateMinimumBid,
                 })}
                 className="input-field pr-24"
                 placeholder="Enter minimum bid"
-                step="10"
+                step="1"
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <span className="text-gray-500 text-sm">
@@ -279,7 +279,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
             {watchedBudget && watchedPlayersPerTeam && (
               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
                 <p className="text-blue-800">
-                  <strong>Recommended range:</strong> {formatCurrency(Math.max(10, Math.floor((watchedBudget / watchedPlayersPerTeam) * 0.001)))} - {formatCurrency(Math.floor(watchedBudget / watchedPlayersPerTeam))}
+                  <strong>Recommended range:</strong> {formatCurrency(Math.max(1, Math.floor((watchedBudget / watchedPlayersPerTeam) * 0.001)))} - {formatCurrency(Math.floor(watchedBudget / watchedPlayersPerTeam))}
                 </p>
                 <p className="text-blue-600 text-xs mt-1">
                   Based on {watchedPlayersPerTeam} players per team and {formatCurrency(watchedBudget)} budget
