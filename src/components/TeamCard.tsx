@@ -91,7 +91,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
             </h3>
             <div className="flex items-center text-xs text-gray-500">
               <Users className="w-3 h-3 mr-1" />
-              <span>{team.players.length}/{team.maxPlayers}</span>
+              <span>{team.players?.length || 0}/{team.maxPlayers}</span>
               <span className="mx-1">•</span>
               <span className="font-medium">{formatCurrency(team.remainingBudget)}</span>
             </div>
@@ -142,7 +142,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
           {!isEligible && (
             <div className="text-xs text-gray-500 px-2 text-center">
               {team.remainingBudget < (minBid || 100) ? 'No Budget' :
-               team.players.length >= team.maxPlayers ? 'Full' : 'Passed'}
+               (team.players?.length || 0) >= team.maxPlayers ? 'Full' : 'Passed'}
             </div>
           )}
         </div>
@@ -156,12 +156,12 @@ const TeamCard: React.FC<TeamCardProps> = ({
       </div>
 
       {/* Expandable Players Section */}
-      {shouldShowExpanded && team.players.length > 0 && (
+      {shouldShowExpanded && team.players && team.players.length > 0 && (
         <div className="mt-3 pt-3 border-t border-gray-200">
           <div className="space-y-2">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Squad ({team.players.length}/{team.maxPlayers})
+                Squad ({team.players?.length || 0}/{team.maxPlayers})
               </h4>
               <div className="text-xs text-gray-500">
                 Spent: {formatCurrency(team.budget - team.remainingBudget)}
@@ -169,7 +169,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
             </div>
 
             <div className="grid gap-1.5">
-              {team.players
+              {(team.players || [])
                 .sort((a, b) => (b.soldPrice || 0) - (a.soldPrice || 0)) // Sort by price descending
                 .map((player) => (
                   <div
@@ -202,14 +202,14 @@ const TeamCard: React.FC<TeamCardProps> = ({
             </div>
 
             {/* Team Summary */}
-            {team.players.length > 0 && (
+            {team.players && team.players.length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-100">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <span>{getRoleIcon('Batsman')}</span>
                       <span className="font-medium text-gray-900">
-                        {team.players.filter(p => p.role === 'Batsman').length}
+                        {(team.players || []).filter(p => p.role === 'Batsman').length}
                       </span>
                     </div>
                     <div className="text-gray-500">Batsmen</div>
@@ -218,7 +218,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <span>{getRoleIcon('Bowler')}</span>
                       <span className="font-medium text-gray-900">
-                        {team.players.filter(p => p.role === 'Bowler').length}
+                        {(team.players || []).filter(p => p.role === 'Bowler').length}
                       </span>
                     </div>
                     <div className="text-gray-500">Bowlers</div>
@@ -227,7 +227,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <span>{getRoleIcon('All-Rounder')}</span>
                       <span className="font-medium text-gray-900">
-                        {team.players.filter(p => p.role === 'All-Rounder').length}
+                        {(team.players || []).filter(p => p.role === 'All-Rounder').length}
                       </span>
                     </div>
                     <div className="text-gray-500">All-Rounders</div>
@@ -236,7 +236,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                     <div className="flex items-center justify-center space-x-1 mb-1">
                       <span>{getRoleIcon('Wicket-Keeper')}</span>
                       <span className="font-medium text-gray-900">
-                        {team.players.filter(p => p.role === 'Wicket-Keeper').length}
+                        {(team.players || []).filter(p => p.role === 'Wicket-Keeper').length}
                       </span>
                     </div>
                     <div className="text-gray-500">Keepers</div>

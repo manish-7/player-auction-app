@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Timer, Trophy, SkipForward, Zap, Undo } from 'lucide-react';
+import { Timer, Trophy, SkipForward, Zap, Undo, Share2, Copy, Users } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency } from '../utils/excelUtils';
+import { useAuctionSharing } from '../hooks/useAuctionSharing';
+import ShareAuctionDemo from './ShareAuctionDemo';
+import ToastContainer from './ToastContainer';
+import { useToast } from '../hooks/useToast';
 import TeamCard from './TeamCard';
 
 interface AuctionRoomProps {
@@ -34,6 +38,15 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const [showBidInput, setShowBidInput] = useState(false);
   const [allTeamsExpanded, setAllTeamsExpanded] = useState<boolean | null>(null);
   const [showEndAuctionDialog, setShowEndAuctionDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showShareDemo, setShowShareDemo] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Toast notifications
+  const { toasts, removeToast, success, warning } = useToast();
+
+  // Auction sharing hook
+  const { sharingState, startSharing, stopSharing, copyShareUrl } = useAuctionSharing();
 
   const currentPlayer = getCurrentPlayer();
   const eligibleTeams = getEligibleTeams();
@@ -69,9 +82,20 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       setTimer((prev) => {
         if (prev <= 1) {
           // Auto-sell or mark unsold
-          if (auctionState.highestBid) {
+          if (auctionState.highestBid && tournament) {
+            const winningTeam = tournament.teams.find(t => t.id === auctionState.highestBid?.teamId);
+            success(
+              `${currentPlayer?.name} AUTO-SOLD!`,
+              `Time expired - Bought by ${winningTeam?.name || 'Unknown Team'} for ${formatCurrency(auctionState.highestBid.amount)}`,
+              5000
+            );
             soldPlayer();
           } else {
+            warning(
+              `${currentPlayer?.name} UNSOLD`,
+              'Time expired - No bids received',
+              4000
+            );
             unsoldPlayer();
           }
           return tournament.settings.timerDuration;
@@ -110,11 +134,26 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   };
 
   const handleSoldPlayer = () => {
+    if (currentPlayer && auctionState.highestBid && tournament) {
+      const winningTeam = tournament.teams.find(t => t.id === auctionState.highestBid?.teamId);
+      success(
+        `${currentPlayer.name} SOLD!`,
+        `Bought by ${winningTeam?.name || 'Unknown Team'} for ${formatCurrency(auctionState.highestBid.amount)}`,
+        5000
+      );
+    }
     soldPlayer();
     setTimer(tournament?.settings.timerDuration || 30);
   };
 
   const handleUnsoldPlayer = () => {
+    if (currentPlayer) {
+      warning(
+        `${currentPlayer.name} UNSOLD`,
+        'No bids received - player goes back to pool',
+        4000
+      );
+    }
     unsoldPlayer();
     setTimer(tournament?.settings.timerDuration || 30);
   };
@@ -122,6 +161,30 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const handleEndAuction = () => {
     endAuction();
     setShowEndAuctionDialog(false);
+  };
+
+  const handleStartSharing = async () => {
+    try {
+      await startSharing();
+      setShowShareDialog(true);
+    } catch (error) {
+      console.error('Failed to start sharing:', error);
+      // Show demo dialog if Firebase isn't configured
+      setShowShareDemo(true);
+    }
+  };
+
+  const handleCopyShareUrl = async () => {
+    const success = await copyShareUrl();
+    if (success) {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  const handleStopSharing = async () => {
+    await stopSharing();
+    setShowShareDialog(false);
   };
 
   if (!tournament || !currentPlayer) {
@@ -156,6 +219,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+
       {/* Compact Header */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Timer */}
@@ -325,6 +391,29 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
             <div className="text-sm text-gray-600">
               Min: <span className="font-semibold text-green-600">{formatCurrency(minBid)}</span>
             </div>
+
+            {/* Share Auction Button */}
+            {!sharingState.isSharing ? (
+              <button
+                onClick={handleStartSharing}
+                disabled={sharingState.isLoading}
+                className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                title="Share auction live with others"
+              >
+                <Share2 className="w-4 h-4 mr-1" />
+                <span>{sharingState.isLoading ? 'Sharing...' : 'Share Live'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowShareDialog(true)}
+                className="flex items-center text-sm text-green-600 hover:text-green-800 transition-colors px-2 py-1 rounded border border-green-200 bg-green-50"
+                title="Auction is being shared live"
+              >
+                <Users className="w-4 h-4 mr-1" />
+                <span>Live ({sharingState.viewerCount})</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowEndAuctionDialog(true)}
               className="flex items-center text-sm text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded border border-red-200 hover:bg-red-50"
@@ -626,6 +715,83 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           </div>
         </div>
       )}
+
+      {/* Share Auction Dialog */}
+      {showShareDialog && sharingState.shareUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                <Share2 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Auction is Live!
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Share this link with others to let them watch the auction in real-time.
+              </p>
+
+              {/* Share URL */}
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <div className="text-sm text-gray-600 mb-2">Share Link:</div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={sharingState.shareUrl}
+                    readOnly
+                    className="flex-1 text-sm bg-white border border-gray-300 rounded px-2 py-1 text-gray-800"
+                  />
+                  <button
+                    onClick={handleCopyShareUrl}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      copySuccess
+                        ? 'bg-green-100 text-green-800 border border-green-300'
+                        : 'bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200'
+                    }`}
+                  >
+                    {copySuccess ? (
+                      <>✓ Copied</>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3 mr-1 inline" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Viewer Count */}
+              <div className="flex items-center justify-center text-sm text-gray-600 mb-4">
+                <Users className="w-4 h-4 mr-1" />
+                <span>{sharingState.viewerCount} viewer{sharingState.viewerCount !== 1 ? 's' : ''} watching</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowShareDialog(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleStopSharing}
+                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Stop Sharing
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Demo Dialog */}
+      <ShareAuctionDemo
+        isVisible={showShareDemo}
+        onClose={() => setShowShareDemo(false)}
+      />
     </div>
   );
 };
