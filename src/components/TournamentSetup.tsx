@@ -42,7 +42,6 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
 
   const watchedBudget = watch('teamBudget');
   const watchedPlayersPerTeam = watch('playersPerTeam');
-  const watchedMinimumBid = watch('minimumBid');
 
   // Function to calculate appropriate minimum bid based on budget
   const calculateMinimumBid = (budget: number, playersPerTeam?: number): number => {

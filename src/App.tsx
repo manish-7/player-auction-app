@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuctionStore } from './store/auctionStore';
+import { useConfirmation } from './hooks/useConfirmation';
+import { RotateCcw, Zap, AlertTriangle } from 'lucide-react';
 import TournamentSetup from './components/TournamentSetup';
 import PlayerInventory from './components/PlayerInventory';
 import TeamSetup from './components/TeamSetup';
@@ -11,6 +13,7 @@ type AppStep = 'tournament' | 'players' | 'teams' | 'auction' | 'results' | 'his
 
 function App() {
   const { tournament, clearStorage, restartAuction } = useAuctionStore();
+  const { showConfirmation, ConfirmationComponent } = useConfirmation();
   const [currentStep, setCurrentStep] = useState<AppStep>('tournament');
   const [hasAutoRestored, setHasAutoRestored] = useState(false);
 
@@ -53,14 +56,19 @@ function App() {
     }
   };
 
-  const handleNavigateToStep = (step: AppStep) => {
+  const handleNavigateToStep = async (step: AppStep) => {
     if (!canNavigateToStep(step)) return;
 
     // Warn if navigating away from active auction
     if (currentStep === 'auction' && tournament?.isAuctionStarted && !tournament?.isAuctionCompleted && step !== 'auction') {
-      const confirmed = window.confirm(
-        'You are currently in an active auction. Navigating away will pause the auction. Are you sure you want to continue?'
-      );
+      const confirmed = await showConfirmation({
+        title: 'Leave Active Auction?',
+        message: 'You are currently in an active auction. Navigating away will pause the auction. Are you sure you want to continue?',
+        confirmText: 'Yes, Leave',
+        cancelText: 'Stay Here',
+        type: 'warning',
+        icon: <AlertTriangle className="w-6 h-6 text-white" />
+      });
       if (!confirmed) return;
     }
 
@@ -123,18 +131,19 @@ function App() {
       {/* Header */}
       <header className="gradient-bg shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 gap-4">
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
             <div className="flex items-center min-w-0 flex-shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <span className="text-xl">🏏</span>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <span className="text-lg sm:text-xl">🏏</span>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-xl font-bold text-white truncate">
-                    Tournament Player Auction
+                  <h1 className="text-lg sm:text-xl font-bold text-white truncate">
+                    <span className="hidden sm:inline">Tournament Player Auction</span>
+                    <span className="sm:hidden">Player Auction</span>
                   </h1>
                   {tournament && (
-                    <p className="text-blue-100 text-sm truncate">
+                    <p className="text-blue-100 text-xs sm:text-sm truncate">
                       {tournament.name}
                     </p>
                   )}
@@ -142,52 +151,71 @@ function App() {
               </div>
             </div>
 
-            {/* Persistence Indicator */}
-            <div className="flex items-center space-x-3 flex-shrink-0">
+            {/* Persistence Indicator & Actions */}
+            <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0">
               {tournament && (
-                <div className="flex items-center space-x-1.5">
+                <div className="hidden sm:flex items-center space-x-1.5">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="text-white/80 text-xs">Auto-saved</span>
                 </div>
               )}
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 {/* Tournament History Button */}
                 <button
                   onClick={() => handleNavigateToStep('history')}
-                  className="bg-purple-500/80 hover:bg-purple-600/90 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="bg-purple-500/80 hover:bg-purple-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
                   title="View tournament history"
                 >
-                  📚 History
+                  <span className="hidden sm:inline">📚 History</span>
+                  <span className="sm:hidden">📚</span>
                 </button>
 
                 {tournament && (
                   <>
                     {(tournament.isAuctionStarted || tournament.isAuctionCompleted) && (
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to restart the auction? This will reset all teams and reshuffle players, but keep your tournament setup.')) {
+                        onClick={async () => {
+                          const confirmed = await showConfirmation({
+                            title: 'Restart Auction?',
+                            message: 'This will reset all teams and reshuffle players, but keep your tournament setup. All current auction progress will be lost.',
+                            confirmText: 'Restart Auction',
+                            cancelText: 'Cancel',
+                            type: 'warning',
+                            icon: <RotateCcw className="w-6 h-6 text-white" />
+                          });
+                          if (confirmed) {
                             restartAuction();
                             setCurrentStep('auction');
                           }
                         }}
-                        className="bg-orange-500/80 hover:bg-orange-600/90 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                        className="bg-orange-500/80 hover:bg-orange-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
                         title="Restart auction with same players and teams"
                       >
-                        🔄 Restart Auction
+                        <span className="hidden sm:inline">🔄 Restart Auction</span>
+                        <span className="sm:hidden">🔄</span>
                       </button>
                     )}
                     <button
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to clear all saved data and start fresh?')) {
+                      onClick={async () => {
+                        const confirmed = await showConfirmation({
+                          title: 'Clear All Data?',
+                          message: 'This will permanently delete all saved tournament data, including players, teams, and auction history. This action cannot be undone.',
+                          confirmText: 'Clear All Data',
+                          cancelText: 'Cancel',
+                          type: 'danger',
+                          icon: <Zap className="w-6 h-6 text-white" />
+                        });
+                        if (confirmed) {
                           clearStorage();
                           setCurrentStep('tournament');
                         }
                       }}
-                      className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                      className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
                       title="Clear all data and start over"
                     >
-                      🆕 New Tournament
+                      <span className="hidden sm:inline">🆕 New Tournament</span>
+                      <span className="sm:hidden">🆕</span>
                     </button>
                   </>
                 )}
@@ -245,6 +273,53 @@ function App() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Progress Indicator */}
+        <div className="md:hidden border-t border-white/20">
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-center space-x-1 overflow-x-auto">
+              {[
+                { id: 'tournament', label: 'Setup', step: 1, icon: '⚙️' },
+                { id: 'players', label: 'Players', step: 2, icon: '👥' },
+                { id: 'teams', label: 'Teams', step: 3, icon: '🏆' },
+                { id: 'auction', label: 'Auction', step: 4, icon: '🔨' },
+                { id: 'results', label: 'Results', step: 5, icon: '📊' },
+              ].map(({ id, label, step, icon }) => {
+                const isActive = currentStep === id;
+                const canNavigate = canNavigateToStep(id as AppStep);
+                const isCompleted =
+                  (currentStep === 'players' && step === 1) ||
+                  (currentStep === 'teams' && step <= 2) ||
+                  (currentStep === 'auction' && step <= 3) ||
+                  (currentStep === 'results' && step <= 4);
+
+                return (
+                  <div key={id} className="flex items-center flex-shrink-0">
+                    <button
+                      onClick={() => handleNavigateToStep(id as AppStep)}
+                      disabled={!canNavigate}
+                      className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-medium transition-all duration-200 ${
+                        isActive
+                          ? 'bg-white text-blue-600 shadow-lg scale-110'
+                          : isCompleted
+                          ? 'bg-green-500/80 text-white hover:bg-green-600/80'
+                          : canNavigate
+                          ? 'bg-white/20 text-white/60 hover:bg-white/30 hover:text-white/80'
+                          : 'bg-white/10 text-white/40 cursor-not-allowed'
+                      } ${canNavigate ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                      title={canNavigate ? `Go to ${label}` : `Complete previous steps to access ${label}`}
+                    >
+                      {icon}
+                    </button>
+                    {step < 5 && (
+                      <div className="w-2 h-0.5 bg-white/30 mx-1" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -260,6 +335,9 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Confirmation Modal */}
+      <ConfirmationComponent />
     </div>
   );
 }

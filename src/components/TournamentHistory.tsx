@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Trophy, Users, DollarSign, Trash2, Eye, ArrowLeft } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
+import { useConfirmation } from '../hooks/useConfirmation';
 import { formatCurrency } from '../utils/excelUtils';
 
 interface TournamentHistoryProps {
@@ -10,8 +11,9 @@ interface TournamentHistoryProps {
 
 const TournamentHistory: React.FC<TournamentHistoryProps> = ({ onBack, onLoadTournament }) => {
   const { getSavedTournaments, loadTournament, deleteSavedTournament } = useAuctionStore();
+  const { showConfirmation, ConfirmationComponent } = useConfirmation();
   const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
-  
+
   const savedTournaments = getSavedTournaments();
 
   const handleLoadTournament = (tournamentId: string) => {
@@ -19,8 +21,17 @@ const TournamentHistory: React.FC<TournamentHistoryProps> = ({ onBack, onLoadTou
     onLoadTournament();
   };
 
-  const handleDeleteTournament = (tournamentId: string, tournamentName: string) => {
-    if (window.confirm(`Are you sure you want to delete "${tournamentName}"? This action cannot be undone.`)) {
+  const handleDeleteTournament = async (tournamentId: string, tournamentName: string) => {
+    const confirmed = await showConfirmation({
+      title: 'Delete Tournament?',
+      message: `Are you sure you want to delete "${tournamentName}"? This action cannot be undone and all tournament data will be permanently lost.`,
+      confirmText: 'Delete Tournament',
+      cancelText: 'Cancel',
+      type: 'danger',
+      icon: <Trash2 className="w-6 h-6 text-white" />
+    });
+
+    if (confirmed) {
       deleteSavedTournament(tournamentId);
       if (selectedTournament === tournamentId) {
         setSelectedTournament(null);
@@ -226,6 +237,9 @@ const TournamentHistory: React.FC<TournamentHistoryProps> = ({ onBack, onLoadTou
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationComponent />
     </div>
   );
 };
