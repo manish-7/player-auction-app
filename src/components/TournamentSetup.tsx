@@ -25,6 +25,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<TournamentFormData>({
     defaultValues: {
@@ -40,6 +41,46 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
   });
 
   const watchedBudget = watch('teamBudget');
+  const watchedPlayersPerTeam = watch('playersPerTeam');
+  const watchedMinimumBid = watch('minimumBid');
+
+  // Function to calculate appropriate minimum bid based on budget
+  const calculateMinimumBid = (budget: number, playersPerTeam?: number): number => {
+    const players = playersPerTeam || watchedPlayersPerTeam || 7;
+    const tenPercentBid = Math.round(budget * 0.1);
+
+    // Ensure the calculated bid doesn't exceed the maximum reasonable amount
+    const maxReasonableMinBid = Math.floor(budget / players);
+
+    // Return the smaller of 10% or the maximum reasonable amount
+    return Math.min(tenPercentBid, maxReasonableMinBid);
+  };
+
+  // Function to validate minimum bid based on budget and players per team
+  const validateMinimumBid = (minimumBid: number): string | boolean => {
+    const budget = watchedBudget || 0;
+    const playersPerTeam = watchedPlayersPerTeam || 7;
+
+    if (!budget || !playersPerTeam) return true;
+
+    // Calculate maximum reasonable minimum bid (budget / players per team)
+    // This ensures teams can afford at least one player per slot at minimum bid
+    const maxReasonableMinBid = Math.floor(budget / playersPerTeam);
+
+    // Calculate minimum reasonable minimum bid (at least 0.1% of average player budget)
+    const avgPlayerBudget = budget / playersPerTeam;
+    const minReasonableMinBid = Math.max(10, Math.floor(avgPlayerBudget * 0.001));
+
+    if (minimumBid > maxReasonableMinBid) {
+      return `Minimum bid too high! Teams won't be able to afford ${playersPerTeam} players. Maximum recommended: ${formatCurrency(maxReasonableMinBid)}`;
+    }
+
+    if (minimumBid < minReasonableMinBid) {
+      return `Minimum bid too low for this budget. Minimum recommended: ${formatCurrency(minReasonableMinBid)}`;
+    }
+
+    return true;
+  };
 
   const onSubmit = (data: TournamentFormData) => {
     createTournament({
@@ -177,6 +218,9 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Quick Budget Options
             </label>
+            <p className="text-sm text-gray-500 mb-3">
+              Select a budget preset. Minimum bid will be automatically calculated.
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
               {[
                 { label: '₹1000', value: 1000 },
@@ -190,8 +234,9 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                   key={option.value}
                   type="button"
                   onClick={() => {
-                    const event = { target: { value: option.value.toString() } };
-                    register('teamBudget').onChange(event);
+                    const suggestedMinBid = calculateMinimumBid(option.value, watchedPlayersPerTeam);
+                    setValue('teamBudget', option.value, { shouldDirty: true });
+                    setValue('minimumBid', suggestedMinBid, { shouldDirty: true });
                   }}
                   className="btn-secondary text-sm py-1"
                 >
@@ -213,7 +258,8 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                 {...register('minimumBid', {
                   required: 'Minimum bid is required',
                   min: { value: 10, message: 'Minimum bid must be at least ₹10' },
-                  max: { value: 100000, message: 'Maximum minimum bid is ₹1 Lakh' },
+                  max: { value: 200000000, message: 'Maximum minimum bid is ₹20 Crores' },
+                  validate: validateMinimumBid,
                 })}
                 className="input-field pr-24"
                 placeholder="Enter minimum bid"
@@ -229,8 +275,18 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
               <p className="mt-1 text-sm text-red-600">{errors.minimumBid.message}</p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              Starting price for players without base price • Recommended: ₹100
+              Starting price for players without base price • Auto-calculated when using quick budget options
             </p>
+            {watchedBudget && watchedPlayersPerTeam && (
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                <p className="text-blue-800">
+                  <strong>Recommended range:</strong> {formatCurrency(Math.max(10, Math.floor((watchedBudget / watchedPlayersPerTeam) * 0.001)))} - {formatCurrency(Math.floor(watchedBudget / watchedPlayersPerTeam))}
+                </p>
+                <p className="text-blue-600 text-xs mt-1">
+                  Based on {watchedPlayersPerTeam} players per team and {formatCurrency(watchedBudget)} budget
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Unsold Players Setting */}
