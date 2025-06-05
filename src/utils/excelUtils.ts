@@ -31,7 +31,7 @@ export const readExcelFile = (file: File): Promise<ExcelPlayerData[]> => {
   });
 };
 
-export const validatePlayerData = (data: ExcelPlayerData[]): {
+export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number = 100): {
   isValid: boolean;
   errors: string[];
   validPlayers: Player[];
@@ -91,8 +91,8 @@ export const validatePlayerData = (data: ExcelPlayerData[]): {
     }
     
     // Check base price (optional)
-    let basePrice = 100; // Default 100 currency units
-    if (row['Base Price'] !== undefined && row['Base Price'] !== null) {
+    let basePrice = minimumBid; // Use tournament's minimum bid as default
+    if (row['Base Price'] !== undefined && row['Base Price'] !== null && row['Base Price'] !== '') {
       const price = Number(row['Base Price']);
       if (isNaN(price) || price < 0) {
         errors.push(`Row ${rowNumber}: Invalid base price "${row['Base Price']}". Must be a positive number`);
@@ -131,7 +131,7 @@ export const validatePlayerData = (data: ExcelPlayerData[]): {
   };
 };
 
-export const generateSampleExcelFile = (): void => {
+export const generateSampleExcelFile = (minimumBid: number = 100): void => {
   const sampleData = [
     // Star Players with all fields
     {
@@ -340,7 +340,7 @@ export const generateSampleExcelFile = (): void => {
     {
       'Field': 'Base Price',
       'Required': 'No',
-      'Description': 'Starting auction price in currency units (default: 100)',
+      'Description': `Starting auction price in currency units (default: ${minimumBid})`,
       'Example': '200',
     },
     {
@@ -375,7 +375,7 @@ export const generateSampleExcelFile = (): void => {
       'Example': '',
     },
     {
-      'Field': '• Default base price is 100 currency units',
+      'Field': `• Default base price is ${minimumBid} currency units`,
       'Required': '',
       'Description': '',
       'Example': '',

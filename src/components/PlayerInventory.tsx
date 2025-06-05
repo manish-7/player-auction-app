@@ -31,7 +31,8 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
 
     try {
       const excelData = await readExcelFile(file);
-      const validation = validatePlayerData(excelData);
+      const minimumBid = tournament?.settings.minimumBid || 100;
+      const validation = validatePlayerData(excelData, minimumBid);
       setValidationResult(validation);
     } catch (error) {
       alert('Error reading Excel file: ' + (error as Error).message);
@@ -75,7 +76,8 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
   };
 
   const handleDownloadSample = () => {
-    generateSampleExcelFile();
+    const minimumBid = tournament?.settings.minimumBid || 100;
+    generateSampleExcelFile(minimumBid);
   };
 
   return (
@@ -129,10 +131,16 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
               onClick={() => {
                 // Load sample data for testing
                 import('../utils/testData').then(({ samplePlayers }) => {
+                  const minimumBid = tournament?.settings.minimumBid || 100;
+                  // Update sample players to use tournament's minimum bid for players without base price
+                  const updatedPlayers = samplePlayers.map(player => ({
+                    ...player,
+                    basePrice: player.basePrice || minimumBid
+                  }));
                   setValidationResult({
                     isValid: true,
                     errors: [],
-                    validPlayers: samplePlayers,
+                    validPlayers: updatedPlayers,
                   });
                 });
               }}
@@ -249,7 +257,7 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
             <ul className="list-disc list-inside space-y-1">
               <li><strong>Player Name</strong> (Required): Full name of the player</li>
               <li><strong>Role</strong> (Optional): Batsman, Bowler, All-Rounder, or Wicket-Keeper (default: Batsman)</li>
-              <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: 100)</li>
+              <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: {formatCurrency(tournament?.settings.minimumBid || 100)})</li>
               <li><strong>Rating</strong> (Optional): Player skill rating from 0-100</li>
             </ul>
           </div>
