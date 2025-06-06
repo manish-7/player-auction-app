@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wifi, WifiOff, Eye, Clock } from 'lucide-react';
+import { Wifi, WifiOff, Eye, Clock, RefreshCw } from 'lucide-react';
 import { auctionSharingService, type SharedAuctionData } from '../services/auctionSharingService';
 import { formatCurrency } from '../utils/excelUtils';
 import TeamCard from './TeamCard';
@@ -18,6 +18,7 @@ const LiveAuctionViewer: React.FC = () => {
   const [viewerName, setViewerName] = useState('');
   const [hasJoined, setHasJoined] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [viewerCount, setViewerCount] = useState(0);
 
   // Track previous state for notifications
   const previousDataRef = useRef<SharedAuctionData | null>(null);
@@ -90,8 +91,29 @@ const LiveAuctionViewer: React.FC = () => {
         }
       );
 
+      // Subscribe to viewer count
+      const unsubscribeViewers = auctionSharingService.subscribeToViewers(
+        auctionId,
+        (count) => {
+          setViewerCount(count);
+        }
+      );
+
+      // Monitor Firebase connection
+      const unsubscribeConnection = auctionSharingService.monitorConnection(
+        (connected) => {
+          console.log('Firebase connection changed:', connected);
+          setIsConnected(connected);
+          if (!connected) {
+            warning('Connection lost', 'Trying to reconnect...', 3000);
+          }
+        }
+      );
+
       return () => {
         unsubscribe();
+        unsubscribeViewers();
+        unsubscribeConnection();
       };
     });
   }, [auctionId]);
@@ -105,6 +127,11 @@ const LiveAuctionViewer: React.FC = () => {
     } catch (error) {
       setError('Failed to join auction');
     }
+  };
+
+  const handleRefresh = () => {
+    console.log('Manual refresh triggered');
+    window.location.reload();
   };
 
   // Join screen
@@ -203,6 +230,10 @@ const LiveAuctionViewer: React.FC = () => {
             <p className="text-gray-600">Watching as {viewerName}</p>
           </div>
           <div className="flex items-center space-x-4">
+            <div className="flex items-center text-sm text-blue-600">
+              <Eye className="w-4 h-4 mr-1" />
+              {viewerCount} watching
+            </div>
             <div className={`flex items-center text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
               {isConnected ? <Wifi className="w-4 h-4 mr-1" /> : <WifiOff className="w-4 h-4 mr-1" />}
               {isConnected ? 'Connected' : 'Disconnected'}
@@ -213,6 +244,14 @@ const LiveAuctionViewer: React.FC = () => {
                 Updated {lastUpdated.toLocaleTimeString()}
               </div>
             )}
+            <button
+              onClick={handleRefresh}
+              className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+              title="Refresh connection"
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Refresh
+            </button>
           </div>
         </div>
       </div>

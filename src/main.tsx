@@ -7,7 +7,7 @@ import LiveAuctionViewer from './components/LiveAuctionViewer.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/auction/live/:auctionId" element={<LiveAuctionViewer />} />
         <Route path="/*" element={<App />} />

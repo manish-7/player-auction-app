@@ -1,4 +1,4 @@
-import { ref, set, onValue, off, push, serverTimestamp } from 'firebase/database';
+import { ref, set, onValue, off, push, serverTimestamp, update } from 'firebase/database';
 import { database } from '../config/firebase';
 import type { Tournament, AuctionState } from '../types';
 
@@ -64,7 +64,10 @@ export class AuctionSharingService {
    * Update shared auction with new state
    */
   async updateSharedAuction(tournament: Tournament, auctionState: AuctionState): Promise<void> {
-    if (!this.currentAuctionId) return;
+    if (!this.currentAuctionId) {
+      console.warn('No current auction ID, cannot update');
+      return;
+    }
 
     try {
       const auctionRef = ref(database, `shared-auctions/${this.currentAuctionId}`);
@@ -75,9 +78,17 @@ export class AuctionSharingService {
         isActive: true,
       };
 
-      await set(auctionRef, updateData);
+      console.log('Updating Firebase with data:', {
+        auctionId: this.currentAuctionId,
+        currentPlayer: tournament.currentPlayerIndex,
+        highestBid: auctionState.highestBid
+      });
+
+      await update(auctionRef, updateData);
+      console.log('Firebase update successful');
     } catch (error) {
       console.error('Error updating shared auction:', error);
+      throw error; // Re-throw to let caller handle
     }
   }
 
@@ -96,13 +107,17 @@ export class AuctionSharingService {
       this.listeners.delete(auctionId);
     };
 
+    console.log('Setting up Firebase listener for auction:', auctionId);
+
     onValue(
       auctionRef,
       (snapshot: any) => {
         const data = snapshot.val();
+        console.log('Firebase data received:', data ? 'Data available' : 'No data');
         if (data) {
           onUpdate(data as SharedAuctionData);
         } else {
+          console.warn('No auction data found');
           onError?.(new Error('Auction not found'));
         }
       },
@@ -137,6 +152,42 @@ export class AuctionSharingService {
       console.error('Error joining auction:', error);
       throw new Error('Failed to join auction');
     }
+  }
+
+  /**
+   * Subscribe to viewer count updates
+   */
+  subscribeToViewers(
+    auctionId: string,
+    onUpdate: (count: number) => void
+  ): () => void {
+    const viewersRef = ref(database, `shared-auctions/${auctionId}/viewers`);
+
+    const unsubscribe = () => {
+      off(viewersRef);
+    };
+
+    onValue(
+      viewersRef,
+      (snapshot: any) => {
+        const viewers = snapshot.val();
+        if (viewers) {
+          // Count active viewers
+          const activeViewers = Object.values(viewers).filter(
+            (viewer: any) => viewer.isActive
+          );
+          onUpdate(activeViewers.length);
+        } else {
+          onUpdate(0);
+        }
+      },
+      (error: any) => {
+        console.error('Error subscribing to viewers:', error);
+        onUpdate(0);
+      }
+    );
+
+    return unsubscribe;
   }
 
   /**
@@ -204,13 +255,34 @@ export class AuctionSharingService {
       const auctionRef = ref(database, `shared-auctions/${auctionId}`);
       return new Promise((resolve) => {
         onValue(auctionRef, (snapshot: any) => {
-          resolve(snapshot.exists());
+          const exists = snapshot.exists();
+          console.log('Auction exists check:', auctionId, exists);
+          resolve(exists);
         }, { onlyOnce: true });
       });
     } catch (error) {
       console.error('Error checking auction:', error);
       return false;
     }
+  }
+
+  /**
+   * Monitor Firebase connection status
+   */
+  monitorConnection(onConnectionChange: (connected: boolean) => void): () => void {
+    const connectedRef = ref(database, '.info/connected');
+
+    const unsubscribe = () => {
+      off(connectedRef);
+    };
+
+    onValue(connectedRef, (snapshot) => {
+      const connected = snapshot.val() === true;
+      console.log('Firebase connection status:', connected);
+      onConnectionChange(connected);
+    });
+
+    return unsubscribe;
   }
 }
 

@@ -9,6 +9,7 @@ export interface SharingState {
   error: string | null;
   isLoading: boolean;
   viewerCount: number;
+  unsubscribeViewers?: () => void;
 }
 
 export const useAuctionSharing = () => {
@@ -61,9 +62,17 @@ export const useAuctionSharing = () => {
    */
   const stopSharing = useCallback(async () => {
     try {
+      // Cleanup viewer subscription
+      setSharingState(prev => {
+        if (prev.unsubscribeViewers) {
+          prev.unsubscribeViewers();
+        }
+        return prev;
+      });
+
       await auctionSharingService.endSharedAuction();
       auctionSharingService.cleanup();
-      
+
       setSharingState({
         isSharing: false,
         shareUrl: null,
@@ -98,9 +107,17 @@ export const useAuctionSharing = () => {
   /**
    * Set up automatic syncing of auction updates
    */
-  const setupAutoSync = useCallback((_auctionId: string) => {
-    // This will be called whenever the auction state changes
-    // We'll implement this when we integrate with the auction store
+  const setupAutoSync = useCallback((auctionId: string) => {
+    // Subscribe to viewer count updates
+    const unsubscribeViewers = auctionSharingService.subscribeToViewers(
+      auctionId,
+      (count) => {
+        setSharingState(prev => ({ ...prev, viewerCount: count }));
+      }
+    );
+
+    // Store the unsubscribe function for cleanup
+    setSharingState(prev => ({ ...prev, unsubscribeViewers }));
   }, []);
 
   /**
@@ -110,7 +127,12 @@ export const useAuctionSharing = () => {
     if (!sharingState.isSharing || !tournament || !auctionState) return;
 
     try {
+      console.log('Syncing auction state to Firebase...', {
+        currentPlayer: tournament.currentPlayerIndex,
+        highestBid: auctionState.highestBid
+      });
       await auctionSharingService.updateSharedAuction(tournament, auctionState);
+      console.log('Auction state synced successfully');
     } catch (error) {
       console.error('Failed to sync auction state:', error);
     }
