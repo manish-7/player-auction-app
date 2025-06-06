@@ -230,21 +230,56 @@ export class AuctionSharingService {
    * Sanitize tournament data for sharing (remove sensitive info)
    */
   private sanitizeTournamentForSharing(tournament: Tournament): Tournament {
-    // Remove any sensitive data or large unnecessary fields
-    return {
+    // Remove any sensitive data or large unnecessary fields and handle undefined values
+    return this.removeUndefinedValues({
       ...tournament,
-      // Could filter out sensitive information here if needed
-    };
+      teams: tournament.teams.map(team => ({
+        ...team,
+        players: team.players.map(player => ({
+          ...player,
+          rating: player.rating ?? null, // Convert undefined to null
+        }))
+      })),
+      players: tournament.players.map(player => ({
+        ...player,
+        rating: player.rating ?? null, // Convert undefined to null
+      }))
+    }) as Tournament;
   }
 
   /**
    * Sanitize auction state for sharing
    */
   private sanitizeAuctionStateForSharing(auctionState: AuctionState): AuctionState {
-    return {
+    return this.removeUndefinedValues({
       ...auctionState,
       // Keep all auction state for now, could optimize later
-    };
+    }) as AuctionState;
+  }
+
+  /**
+   * Recursively remove undefined values from an object
+   */
+  private removeUndefinedValues(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedValues(item));
+    }
+
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+          cleaned[key] = this.removeUndefinedValues(value);
+        }
+      }
+      return cleaned;
+    }
+
+    return obj;
   }
 
   /**
