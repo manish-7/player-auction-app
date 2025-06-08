@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle, Image } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { readExcelFile, validatePlayerData, generateSampleExcelFile, formatCurrency } from '../utils/excelUtils';
+import { imageCacheService } from '../services/imageCacheService';
 import type { Player } from '../types';
 
 interface PlayerInventoryProps {
@@ -18,6 +19,10 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
     validPlayers: Player[];
   } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [imagePreloadProgress, setImagePreloadProgress] = useState<{
+    loaded: number;
+    total: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (file: File) => {
@@ -34,6 +39,29 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
       const minimumBid = tournament?.settings.minimumBid || 100;
       const validation = validatePlayerData(excelData, minimumBid);
       setValidationResult(validation);
+
+      // Preload images if validation is successful
+      if (validation.isValid && validation.validPlayers.length > 0) {
+        const playersWithImages = validation.validPlayers.filter(p => p.imageUrl);
+        if (playersWithImages.length > 0) {
+          console.log(`Starting to preload ${playersWithImages.length} player images...`);
+          setImagePreloadProgress({ loaded: 0, total: playersWithImages.length });
+
+          try {
+            await imageCacheService.preloadPlayerImages(
+              validation.validPlayers,
+              (loaded, total) => {
+                setImagePreloadProgress({ loaded, total });
+              }
+            );
+            console.log('All player images preloaded successfully!');
+          } catch (error) {
+            console.warn('Some images failed to preload:', error);
+          } finally {
+            setImagePreloadProgress(null);
+          }
+        }
+      }
     } catch (error) {
       alert('Error reading Excel file: ' + (error as Error).message);
     } finally {
@@ -128,23 +156,52 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
               Download Sample Excel File
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 // Load sample data for testing
-                import('../utils/testData').then(({ samplePlayers }) => {
+                setIsLoading(true);
+                try {
+                  const { samplePlayers } = await import('../utils/testData');
                   const minimumBid = tournament?.settings.minimumBid || 100;
                   // Update sample players to use tournament's minimum bid for players without base price
                   const updatedPlayers = samplePlayers.map(player => ({
                     ...player,
                     basePrice: player.basePrice || minimumBid
                   }));
+
                   setValidationResult({
                     isValid: true,
                     errors: [],
                     validPlayers: updatedPlayers,
                   });
-                });
+
+                  // Preload sample images
+                  const playersWithImages = updatedPlayers.filter(p => p.imageUrl);
+                  if (playersWithImages.length > 0) {
+                    console.log(`Preloading ${playersWithImages.length} sample player images...`);
+                    setImagePreloadProgress({ loaded: 0, total: playersWithImages.length });
+
+                    try {
+                      await imageCacheService.preloadPlayerImages(
+                        updatedPlayers,
+                        (loaded, total) => {
+                          setImagePreloadProgress({ loaded, total });
+                        }
+                      );
+                      console.log('Sample images preloaded successfully!');
+                    } catch (error) {
+                      console.warn('Some sample images failed to preload:', error);
+                    } finally {
+                      setImagePreloadProgress(null);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error loading sample data:', error);
+                } finally {
+                  setIsLoading(false);
+                }
               }}
               className="btn-primary inline-flex items-center"
+              disabled={isLoading}
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" />
               Load Sample Data (For Testing)
@@ -204,6 +261,26 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
                 <p className="text-green-800 mb-4">
                   Found {validationResult.validPlayers.length} valid players ready for auction.
                 </p>
+
+                {/* Image Preload Progress */}
+                {imagePreloadProgress && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+                    <div className="flex items-center mb-2">
+                      <Image className="w-4 h-4 text-blue-600 mr-2" />
+                      <span className="text-sm font-medium text-blue-900">
+                        Loading player images... ({imagePreloadProgress.loaded}/{imagePreloadProgress.total})
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(imagePreloadProgress.loaded / imagePreloadProgress.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 {/* Player Summary */}
                 <div className="bg-white rounded border p-4 mb-4">
@@ -259,6 +336,7 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
               <li><strong>Role</strong> (Optional): Batsman, Bowler, All-Rounder, or Wicket-Keeper (default: Batsman)</li>
               <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: {formatCurrency(tournament?.settings.minimumBid || 100)})</li>
               <li><strong>Rating</strong> (Optional): Player skill rating from 0-100</li>
+              <li><strong>Image URL</strong> (Optional): Direct link to player's photo (e.g., https://example.com/player.jpg)</li>
             </ul>
           </div>
         </div>

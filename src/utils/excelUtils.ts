@@ -112,7 +112,23 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
       }
       rating = ratingValue;
     }
-    
+
+    // Check image URL (optional)
+    let imageUrl: string | undefined;
+    if (row['Image URL'] !== undefined && row['Image URL'] !== null) {
+      const urlValue = row['Image URL']?.toString().trim();
+      if (urlValue) {
+        // Basic URL validation
+        try {
+          new URL(urlValue);
+          imageUrl = urlValue;
+        } catch {
+          errors.push(`Row ${rowNumber}: Invalid image URL "${urlValue}". Must be a valid URL`);
+          return;
+        }
+      }
+    }
+
     // Create valid player
     const player: Player = {
       id: `player-${Date.now()}-${index}`,
@@ -120,6 +136,7 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
       basePrice,
       role,
       rating,
+      imageUrl,
     };
     
     validPlayers.push(player);
@@ -140,18 +157,21 @@ export const generateSampleExcelFile = (minimumBid: number = 100): void => {
       'Base Price': 200,
       'Role': 'Batsman',
       'Rating': 95,
+      'Image URL': 'https://example.com/virat-kohli.jpg',
     },
     {
       'Player Name': 'Jasprit Bumrah',
       'Base Price': 150,
       'Role': 'Bowler',
       'Rating': 92,
+      'Image URL': 'https://example.com/jasprit-bumrah.jpg',
     },
     {
       'Player Name': 'MS Dhoni',
       'Base Price': 250,
       'Role': 'Wicket-Keeper',
       'Rating': 90,
+      'Image URL': 'https://example.com/ms-dhoni.jpg',
     },
     {
       'Player Name': 'Hardik Pandya',
@@ -355,6 +375,12 @@ export const generateSampleExcelFile = (minimumBid: number = 100): void => {
       'Required': 'No',
       'Description': 'Player skill rating from 0-100 (optional)',
       'Example': '95',
+    },
+    {
+      'Field': 'Image URL',
+      'Required': 'No',
+      'Description': 'Direct link to player photo (optional)',
+      'Example': 'https://example.com/player.jpg',
     },
     {},
     {

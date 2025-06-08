@@ -4,6 +4,7 @@ export interface Player {
   basePrice?: number;
   role?: PlayerRole;
   rating?: number;
+  imageUrl?: string;
   isUnsold?: boolean;
   soldPrice?: number;
   teamId?: string;
@@ -86,6 +87,7 @@ export interface ExcelPlayerData {
   'Base Price'?: number;
   'Role'?: string;
   'Rating'?: number;
+  'Image URL'?: string;
 }
 
 export interface AuctionSettings {

@@ -7,6 +7,7 @@ export const samplePlayers: Player[] = [
     basePrice: 200,
     role: 'Batsman',
     rating: 95,
+    imageUrl: 'https://drive.google.com/uc?export=view&id=1pH0joh6VmIocGt1j3QYH-sc93mulJhae',
   },
   {
     id: 'player-2',
@@ -14,6 +15,7 @@ export const samplePlayers: Player[] = [
     basePrice: 150,
     role: 'Bowler',
     rating: 92,
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&h=200&fit=crop&crop=face',
   },
   {
     id: 'player-3',
@@ -21,6 +23,7 @@ export const samplePlayers: Player[] = [
     basePrice: 250,
     role: 'Wicket-Keeper',
     rating: 90,
+    imageUrl: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=200&h=200&fit=crop&crop=face',
   },
   {
     id: 'player-4',
@@ -28,6 +31,7 @@ export const samplePlayers: Player[] = [
     basePrice: 180,
     role: 'All-Rounder',
     rating: 88,
+    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
   },
   {
     id: 'player-5',

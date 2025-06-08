@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Check, Star } from 'lucide-react';
 import type { Team } from '../types';
 import { formatCurrency } from '../utils/excelUtils';
+import PlayerImage from './PlayerImage';
 
 // Role icons mapping
 const getRoleIcon = (role: string | undefined) => {
@@ -177,6 +178,14 @@ const TeamCard: React.FC<TeamCardProps> = ({
                     className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                   >
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      {/* Player Image */}
+                      <PlayerImage
+                        imageUrl={player.imageUrl}
+                        playerName={player.name}
+                        size="sm"
+                        className="flex-shrink-0"
+                      />
+
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="text-sm">{getRoleIcon(player.role)}</span>

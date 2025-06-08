@@ -6,6 +6,7 @@ import { formatCurrency } from '../utils/excelUtils';
 import TeamCard from './TeamCard';
 import ToastContainer from './ToastContainer';
 import { useToast } from '../hooks/useToast';
+import PlayerImage from './PlayerImage';
 
 const LiveAuctionViewer: React.FC = () => {
   const { auctionId } = useParams<{ auctionId: string }>();
@@ -260,16 +261,42 @@ const LiveAuctionViewer: React.FC = () => {
         {/* Current Player */}
         {currentPlayer && (
           <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {currentPlayer.name}
-              </h2>
-              {currentPlayer.rating && (
-                <div className="flex items-center justify-center text-yellow-500 mb-4">
-                  <span className="text-xl">⭐ {currentPlayer.rating}/100</span>
-                </div>
-              )}
-              
+            <div className="flex items-center justify-center space-x-6">
+              {/* Player Image */}
+              <PlayerImage
+                imageUrl={currentPlayer.imageUrl}
+                playerName={currentPlayer.name}
+                size="2xl"
+                className="shadow-lg border-4 border-white flex-shrink-0"
+              />
+
+              {/* Player Info */}
+              <div className="text-center">
+                {/* Player Name */}
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  {currentPlayer.name}
+                </h2>
+
+                {/* Player Rating */}
+                {currentPlayer.rating && (
+                  <div className="flex items-center justify-center text-yellow-500 mb-4">
+                    <span className="text-xl">⭐ {currentPlayer.rating}/100</span>
+                  </div>
+                )}
+
+                {/* Player Role */}
+                {currentPlayer.role && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                      {currentPlayer.role}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bid Information */}
+            <div className="mt-6">
               {auctionState.highestBid ? (
                 <div className="text-center">
                   <p className="text-sm text-blue-600 font-medium mb-2">CURRENT BID</p>

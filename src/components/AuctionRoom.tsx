@@ -7,6 +7,7 @@ import ShareAuctionDemo from './ShareAuctionDemo';
 import ToastContainer from './ToastContainer';
 import { useToast } from '../hooks/useToast';
 import TeamCard from './TeamCard';
+import PlayerImage from './PlayerImage';
 
 interface AuctionRoomProps {
   onComplete: () => void;
@@ -259,15 +260,38 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               </button>
             </div>
           ) : (
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-3">
-                {currentPlayer.name}
-              </h1>
-              {currentPlayer.rating && (
-                <div className="flex items-center justify-center text-yellow-500">
-                  <span className="text-xl">⭐ {currentPlayer.rating}/100</span>
-                </div>
-              )}
+            <div className="flex items-center justify-center space-x-6">
+              {/* Player Image */}
+              <PlayerImage
+                imageUrl={currentPlayer.imageUrl}
+                playerName={currentPlayer.name}
+                size="2xl"
+                className="shadow-lg border-4 border-white flex-shrink-0"
+              />
+
+              {/* Player Info */}
+              <div className="text-center">
+                {/* Player Name */}
+                <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                  {currentPlayer.name}
+                </h1>
+
+                {/* Player Rating */}
+                {currentPlayer.rating && (
+                  <div className="flex items-center justify-center text-yellow-500 mb-2">
+                    <span className="text-xl">⭐ {currentPlayer.rating}/100</span>
+                  </div>
+                )}
+
+                {/* Player Role */}
+                {currentPlayer.role && (
+                  <div>
+                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                      {currentPlayer.role}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

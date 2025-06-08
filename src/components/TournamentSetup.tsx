@@ -31,11 +31,11 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
     defaultValues: {
       name: 'IPL Auction 2025',
       numberOfTeams: 4,
-      playersPerTeam: 7,
+      playersPerTeam: 6,
       teamBudget: 1000, // ₹1000 for quick testing
       minimumBid: 100, // ₹100 minimum bid
       enableUnsoldPlayerReturn: true,
-      enableTimer: true,
+      enableTimer: false,
       timerDuration: 30,
     },
   });
@@ -169,8 +169,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
               id="playersPerTeam"
               {...register('playersPerTeam', {
                 required: 'Players per team is required',
-                min: { value: 5, message: 'Minimum 5 players per team' },
-                max: { value: 25, message: 'Maximum 25 players per team' },
+                min: { value: 1, message: 'Minimum 1 player per team' },
               })}
               className="input-field"
               placeholder="Enter players per team"
