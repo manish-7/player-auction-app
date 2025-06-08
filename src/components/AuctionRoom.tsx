@@ -63,7 +63,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   useEffect(() => {
     if (currentPlayer) {
       const minBid = auctionState.highestBid?.amount
-        ? auctionState.highestBid.amount + settings.bidIncrement
+        ? auctionState.highestBid.amount + Number(settings.bidIncrement)
         : currentPlayer.basePrice || tournament?.settings.minimumBid || 100;
       setBidAmount(minBid);
     }
@@ -113,13 +113,13 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       placeBid(selectedTeam, bidAmount);
       setSelectedTeam('');
       setShowBidInput(false);
-      setBidAmount(bidAmount + settings.bidIncrement);
+      setBidAmount(bidAmount + Number(settings.bidIncrement));
     }
   };
 
   const handleQuickBid = (teamId: string) => {
     const quickBidAmount = auctionState.highestBid?.amount
-      ? auctionState.highestBid.amount + settings.bidIncrement
+      ? auctionState.highestBid.amount + Number(settings.bidIncrement)
       : currentPlayer?.basePrice || tournament?.settings.minimumBid || 100;
 
     const maxBid = getMaxBidForTeam(teamId);
@@ -211,7 +211,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   }
 
   const minBid = auctionState.highestBid?.amount
-    ? auctionState.highestBid.amount + settings.bidIncrement
+    ? auctionState.highestBid.amount + Number(settings.bidIncrement)
     : currentPlayer.basePrice || tournament?.settings.minimumBid || 100;
 
   const highestBiddingTeam = auctionState.highestBid 
@@ -549,21 +549,28 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
                   <div className="flex items-center space-x-3">
                     <div className="flex-1">
-                      <input
-                        type="number"
-                        value={bidAmount}
-                        onChange={(e) => setBidAmount(Number(e.target.value))}
-                        min={minBid}
-                        max={maxBid}
-                        step={settings.bidIncrement}
-                        className="input-field text-sm"
-                        placeholder={`Min: ${formatCurrency(minBid)} • Max: ${formatCurrency(maxBid)}`}
-                      />
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={bidAmount}
+                          onChange={(e) => setBidAmount(Number(e.target.value))}
+                          min={minBid}
+                          max={maxBid}
+                          step={Number(settings.bidIncrement)}
+                          className="input-field text-sm pr-24"
+                          placeholder={`Min: ${formatCurrency(minBid)} • Max: ${formatCurrency(maxBid)}`}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-sm text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                            {formatCurrency(bidAmount || 0)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-1 max-w-md">
                       {(() => {
                         // Generate smart quick bid increments
-                        const baseIncrement = settings.bidIncrement;
+                        const baseIncrement = Number(settings.bidIncrement);
                         const currentBid = auctionState.highestBid?.amount || (currentPlayer?.basePrice || tournament?.settings.minimumBid || 100);
 
                         // Create multiple increment options based on current bid scale

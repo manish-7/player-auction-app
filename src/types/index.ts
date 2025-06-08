@@ -44,6 +44,7 @@ export interface TournamentSettings {
   enableTimer: boolean;
   timerDuration: number; // in seconds: 30, 60, 90, 120
   minimumBid: number; // minimum bid amount
+  bidIncrement: number; // bid increment amount
 }
 
 export interface AuctionConstraints {

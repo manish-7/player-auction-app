@@ -132,6 +132,7 @@ export const useAuctionStore = create<AuctionStore>()(
           enableTimer: true,
           timerDuration: 30,
           minimumBid: 100,
+          bidIncrement: 100, // Default bid increment same as minimum bid
         };
 
         const tournament: Tournament = {
@@ -148,18 +149,14 @@ export const useAuctionStore = create<AuctionStore>()(
           settings: config.settings || defaultSettings,
         };
 
-        // Calculate appropriate bid increment based on minimum bid
-        const minimumBid = tournament.settings.minimumBid;
-        const calculatedBidIncrement = Math.max(
-          1, // Minimum increment of ₹1
-          Math.round(minimumBid * 0.1) // 10% of minimum bid
-        );
+        // Use the tournament's configured bid increment
+        const bidIncrement = tournament.settings.bidIncrement;
 
         set({
           tournament,
           settings: {
             ...get().settings,
-            bidIncrement: calculatedBidIncrement
+            bidIncrement: bidIncrement
           }
         });
       },
@@ -517,7 +514,7 @@ export const useAuctionStore = create<AuctionStore>()(
         return tournament.teams.filter(team => {
           // Check if team has budget for minimum bid
           const minBid = auctionState.highestBid?.amount
-            ? auctionState.highestBid.amount + get().settings.bidIncrement
+            ? auctionState.highestBid.amount + Number(get().settings.bidIncrement)
             : currentPlayer.basePrice || tournament.settings.minimumBid;
 
           if (team.remainingBudget < minBid) return false;
@@ -596,12 +593,8 @@ export const useAuctionStore = create<AuctionStore>()(
           // Shuffle players again for new auction order
           const shuffledPlayers = [...resetPlayers].sort(() => Math.random() - 0.5);
 
-          // Recalculate bid increment based on current minimum bid
-          const minimumBid = state.tournament.settings.minimumBid;
-          const calculatedBidIncrement = Math.max(
-            1, // Minimum increment of ₹1
-            Math.round(minimumBid * 0.1) // 10% of minimum bid
-          );
+          // Use the tournament's configured bid increment
+          const bidIncrement = state.tournament.settings.bidIncrement;
 
           return {
             tournament: {
@@ -616,7 +609,7 @@ export const useAuctionStore = create<AuctionStore>()(
             bidHistory: [],
             settings: {
               ...state.settings,
-              bidIncrement: calculatedBidIncrement
+              bidIncrement: bidIncrement
             }
           };
         });
@@ -653,12 +646,8 @@ export const useAuctionStore = create<AuctionStore>()(
         const savedTournament = savedTournaments.find(st => st.id === tournamentId);
         if (!savedTournament) return;
 
-        // Recalculate bid increment based on loaded tournament's minimum bid
-        const minimumBid = savedTournament.tournament.settings.minimumBid;
-        const calculatedBidIncrement = Math.max(
-          1, // Minimum increment of ₹1
-          Math.round(minimumBid * 0.1) // 10% of minimum bid
-        );
+        // Use the tournament's configured bid increment
+        const bidIncrement = savedTournament.tournament.settings.bidIncrement || savedTournament.tournament.settings.minimumBid;
 
         set((state) => ({
           tournament: savedTournament.tournament,
@@ -666,7 +655,7 @@ export const useAuctionStore = create<AuctionStore>()(
           bidHistory: [],
           settings: {
             ...state.settings,
-            bidIncrement: calculatedBidIncrement
+            bidIncrement: bidIncrement
           }
         }));
       },

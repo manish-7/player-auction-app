@@ -9,6 +9,7 @@ interface TournamentFormData {
   playersPerTeam: number;
   teamBudget: number;
   minimumBid: number;
+  bidIncrement: number;
   enableUnsoldPlayerReturn: boolean;
   enableTimer: boolean;
   timerDuration: number;
@@ -34,6 +35,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
       playersPerTeam: 6,
       teamBudget: 1000, // ₹1000 for quick testing
       minimumBid: 100, // ₹100 minimum bid
+      bidIncrement: 100, // ₹100 bid increment (same as minimum bid)
       enableUnsoldPlayerReturn: true,
       enableTimer: false,
       timerDuration: 30,
@@ -92,7 +94,8 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
         unsoldPlayerReturnRound: 1,
         enableTimer: data.enableTimer,
         timerDuration: data.timerDuration,
-        minimumBid: data.minimumBid,
+        minimumBid: Number(data.minimumBid),
+        bidIncrement: Number(data.bidIncrement),
       },
     });
     onNext();
@@ -245,6 +248,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                     const suggestedMinBid = calculateMinimumBid(option.value, watchedPlayersPerTeam);
                     setValue('teamBudget', option.value, { shouldDirty: true });
                     setValue('minimumBid', suggestedMinBid, { shouldDirty: true });
+                    setValue('bidIncrement', suggestedMinBid, { shouldDirty: true }); // Set bid increment same as minimum bid
                   }}
                   className="btn-secondary text-sm py-1"
                 >
@@ -295,6 +299,43 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Bid Increment */}
+          <div>
+            <label htmlFor="bidIncrement" className="block text-sm font-medium text-gray-700 mb-2">
+              Bid Increment Amount
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                id="bidIncrement"
+                {...register('bidIncrement', {
+                  required: 'Bid increment is required',
+                  min: { value: 1, message: 'Bid increment must be at least ₹1' },
+                  max: { value: 100000000, message: 'Maximum bid increment is ₹10 Crores' },
+                })}
+                className="input-field pr-24"
+                placeholder="Enter bid increment"
+                step="1"
+              />
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 text-sm">
+                  {formatCurrency(watch('bidIncrement') || 0)}
+                </span>
+              </div>
+            </div>
+            {errors.bidIncrement && (
+              <p className="mt-1 text-sm text-red-600">{errors.bidIncrement.message}</p>
+            )}
+            <p className="mt-1 text-sm text-gray-500">
+              Amount by which bids increase in the auction • Used for quick bid buttons
+            </p>
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+              <p className="text-green-800">
+                <strong>Quick bid options will be:</strong> +{formatCurrency(watch('bidIncrement') || 0)}, +{formatCurrency((watch('bidIncrement') || 0) * 2)}, +{formatCurrency((watch('bidIncrement') || 0) * 5)}, +{formatCurrency((watch('bidIncrement') || 0) * 10)}, etc.
+              </p>
+            </div>
           </div>
 
           {/* Unsold Players Setting */}
