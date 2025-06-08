@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3 } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency, exportAuctionResults } from '../utils/excelUtils';
+import PlayerImage from './PlayerImage';
 
 interface DashboardProps {
   onRestart: () => void;
@@ -196,7 +197,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                         <tbody className="bg-white divide-y divide-gray-200">
                           {team.players.map((player) => (
                             <tr key={player.id}>
-                              <td className="px-4 py-2 text-sm font-medium text-gray-900">{player.name}</td>
+                              <td className="px-4 py-2">
+                                <div className="flex items-center space-x-3">
+                                  <PlayerImage
+                                    imageUrl={player.imageUrl}
+                                    playerName={player.name}
+                                    size="sm"
+                                    className="flex-shrink-0"
+                                  />
+                                  <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                                </div>
+                              </td>
                               <td className="px-4 py-2 text-sm text-gray-500">{player.role || 'N/A'}</td>
                               <td className="px-4 py-2 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>
                               <td className="px-4 py-2 text-sm font-medium text-green-600">
@@ -237,7 +248,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                       const team = player.teamId ? tournament.teams.find(t => t.id === player.teamId) : null;
                       return (
                         <tr key={player.id}>
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">{player.name}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center space-x-3">
+                              <PlayerImage
+                                imageUrl={player.imageUrl}
+                                playerName={player.name}
+                                size="sm"
+                                className="flex-shrink-0"
+                              />
+                              <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                            </div>
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-500">{player.role || 'N/A'}</td>
                           <td className="px-4 py-3 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>
                           <td className="px-4 py-3 text-sm font-medium">
