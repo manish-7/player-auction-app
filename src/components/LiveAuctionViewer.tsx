@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wifi, WifiOff, Eye, Clock, RefreshCw } from 'lucide-react';
+import { Wifi, WifiOff, Eye, Clock, RefreshCw, Trophy, EyeOff } from 'lucide-react';
 import { auctionSharingService, type SharedAuctionData } from '../services/auctionSharingService';
 import { formatCurrency } from '../utils/excelUtils';
 import TeamCard from './TeamCard';
@@ -20,6 +20,7 @@ const LiveAuctionViewer: React.FC = () => {
   const [hasJoined, setHasJoined] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
+  const [showPrices, setShowPrices] = useState(true);
 
   // Track previous state for notifications
   const previousDataRef = useRef<SharedAuctionData | null>(null);
@@ -246,6 +247,18 @@ const LiveAuctionViewer: React.FC = () => {
               </div>
             )}
             <button
+              onClick={() => setShowPrices(!showPrices)}
+              className={`flex items-center text-sm transition-colors px-2 py-1 rounded border ${
+                showPrices
+                  ? 'text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100'
+                  : 'text-gray-600 border-gray-200 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+              title={showPrices ? 'Hide prices' : 'Show prices'}
+            >
+              {showPrices ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
+              {showPrices ? 'Hide Prices' : 'Show Prices'}
+            </button>
+            <button
               onClick={handleRefresh}
               className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
               title="Refresh connection"
@@ -258,8 +271,8 @@ const LiveAuctionViewer: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 space-y-4">
-        {/* Current Player - Compact Card */}
-        {currentPlayer && (
+        {/* Current Player or Completion Status */}
+        {currentPlayer ? (
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               {/* Bid Information - Far Left */}
@@ -268,7 +281,7 @@ const LiveAuctionViewer: React.FC = () => {
                   <div>
                     <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
                     <div className="text-3xl font-bold text-blue-600">
-                      {formatCurrency(auctionState.highestBid.amount)}
+                      {showPrices ? formatCurrency(auctionState.highestBid.amount) : '***'}
                     </div>
                     <p className="text-sm text-gray-600">
                       by {tournament.teams?.find(t => t.id === auctionState.highestBid?.teamId)?.name || 'Unknown Team'}
@@ -278,7 +291,7 @@ const LiveAuctionViewer: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
                     <div className="text-3xl font-bold text-gray-900">
-                      {formatCurrency(currentPlayer.basePrice || tournament.settings.minimumBid)}
+                      {showPrices ? formatCurrency(currentPlayer.basePrice || tournament.settings.minimumBid) : '***'}
                     </div>
                   </div>
                 )}
@@ -323,6 +336,26 @@ const LiveAuctionViewer: React.FC = () => {
               </div>
             </div>
           </div>
+        ) : (
+          /* Auction Completed Banner */
+          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg shadow-md border-2 border-green-200 p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-green-800 mb-2">
+                🏆 Auction Completed!
+              </h2>
+              <p className="text-green-700 text-lg">
+                All players have been auctioned. Check out the final team compositions below.
+              </p>
+              <div className="mt-4 text-sm text-green-600">
+                <span className="font-medium">
+                  {tournament.players?.length || 0} players processed
+                </span>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Teams Grid - Compact */}
@@ -333,14 +366,6 @@ const LiveAuctionViewer: React.FC = () => {
               tournament.teams.map((team) => {
                 const isHighestBidder = auctionState.highestBid?.teamId === team.id;
 
-                // Calculate if team is eligible (can afford current player)
-                const currentPlayer = tournament.players && tournament.players[tournament.currentPlayerIndex];
-                const basePrice = currentPlayer ? (currentPlayer.basePrice || tournament.settings?.minimumBid || 100) : 100;
-                const currentBid = auctionState.highestBid?.amount || 0;
-                const minBid = Math.max(basePrice, currentBid + (tournament.settings?.minimumBid || 100));
-                const isEligible = team.remainingBudget >= minBid &&
-                                 (team.players?.length || 0) < (team.maxPlayers || 11);
-
                 // Ensure team has required properties
                 const safeTeam = {
                   ...team,
@@ -348,6 +373,18 @@ const LiveAuctionViewer: React.FC = () => {
                   remainingBudget: team.remainingBudget || 0,
                   maxPlayers: team.maxPlayers || 11,
                 };
+
+                // Calculate minBid for display purposes
+                const currentPlayerForBid = tournament.players && tournament.players[tournament.currentPlayerIndex];
+                const basePrice = currentPlayerForBid ? (currentPlayerForBid.basePrice || tournament.settings?.minimumBid || 100) : 100;
+                const currentBid = auctionState.highestBid?.amount || 0;
+                const minBid = Math.max(basePrice, currentBid + (tournament.settings?.minimumBid || 100));
+
+                // For live viewer, calculate eligibility to show proper status messages
+                // but don't gray out teams (they should still be visible)
+                const hasSquadSpace = (safeTeam.players?.length || 0) < safeTeam.maxPlayers;
+                const hasBudget = safeTeam.remainingBudget >= minBid;
+                const isEligible = hasSquadSpace && hasBudget;
 
                 return (
                   <TeamCard
@@ -362,6 +399,8 @@ const LiveAuctionViewer: React.FC = () => {
                     disabled={true}
                     minBid={minBid}
                     maxBid={team.remainingBudget}
+                    viewerMode={true}
+                    showPrices={showPrices}
                   />
                 );
               })

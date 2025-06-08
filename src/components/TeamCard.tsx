@@ -32,6 +32,8 @@ interface TeamCardProps {
   maxBid?: number;
   minBid?: number;
   forceExpanded?: boolean | null;
+  viewerMode?: boolean; // New prop for live viewer mode
+  showPrices?: boolean; // New prop to control price visibility
 }
 
 const TeamCard: React.FC<TeamCardProps> = ({
@@ -46,6 +48,8 @@ const TeamCard: React.FC<TeamCardProps> = ({
   maxBid,
   minBid,
   forceExpanded = null,
+  viewerMode = false,
+  showPrices = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -64,7 +68,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
       ? 'border-green-500 bg-green-50 shadow-md'
       : isSelected
         ? 'border-blue-500 bg-blue-50 shadow-sm'
-        : isEligible
+        : isEligible || viewerMode
           ? 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm'
           : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
     }
@@ -101,7 +105,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
           <div className="flex items-center space-x-3">
             <div className="text-left">
               <div className="text-lg font-semibold text-gray-900">
-                {formatCurrency(team.remainingBudget)}
+                {showPrices ? formatCurrency(team.remainingBudget) : '***'}
               </div>
               <div className="text-xs text-gray-500">Budget Left</div>
             </div>
@@ -114,7 +118,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
           </div>
 
           {/* Max Bid - Right Side */}
-          {maxBid !== undefined && isEligible && (
+          {maxBid !== undefined && isEligible && showPrices && (
             <div className="text-right">
               <div className="text-sm font-medium text-orange-600">
                 {formatCurrency(maxBid)}
@@ -139,7 +143,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
               >
                 <div className="flex items-center justify-center space-x-1">
                   <span>⚡</span>
-                  <span>BID {formatCurrency(minBid)}</span>
+                  <span>BID {showPrices ? formatCurrency(minBid) : '***'}</span>
                 </div>
               </button>
             )}
@@ -174,7 +178,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                 Squad ({team.players?.length || 0}/{team.maxPlayers})
               </h4>
               <div className="text-xs text-gray-500">
-                Spent: {formatCurrency(team.budget - team.remainingBudget)}
+                Spent: {showPrices ? formatCurrency(team.budget - team.remainingBudget) : '***'}
               </div>
             </div>
 
@@ -213,7 +217,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs font-semibold text-green-600 flex-shrink-0">
-                      {formatCurrency(player.soldPrice || 0)}
+                      {showPrices ? formatCurrency(player.soldPrice || 0) : '***'}
                     </div>
                   </div>
                 ))}

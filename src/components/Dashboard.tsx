@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3 } from 'lucide-react';
+import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency, exportAuctionResults } from '../utils/excelUtils';
 import PlayerImage from './PlayerImage';
@@ -11,6 +11,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
   const { tournament, resetAuction } = useAuctionStore();
   const [activeTab, setActiveTab] = useState<'teams' | 'players' | 'stats'>('teams');
+  const [showPrices, setShowPrices] = useState(true);
 
   if (!tournament) {
     return <div>No tournament data available</div>;
@@ -53,6 +54,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
           </div>
           <div className="flex space-x-3">
             <button
+              onClick={() => setShowPrices(!showPrices)}
+              className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                showPrices
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100'
+                  : 'text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100'
+              }`}
+              title={showPrices ? 'Hide prices' : 'Show prices'}
+            >
+              {showPrices ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+              {showPrices ? 'Hide Prices' : 'Show Prices'}
+            </button>
+            <button
               onClick={handleExportResults}
               className="btn-success inline-flex items-center"
             >
@@ -85,7 +98,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
               <DollarSign className="w-8 h-8 text-green-600 mr-3" />
               <div>
                 <p className="text-sm text-green-600">Total Spent</p>
-                <p className="text-2xl font-bold text-green-900">{formatCurrency(totalSpent)}</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {showPrices ? formatCurrency(totalSpent) : '***'}
+                </p>
               </div>
             </div>
           </div>
@@ -94,7 +109,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
               <BarChart3 className="w-8 h-8 text-yellow-600 mr-3" />
               <div>
                 <p className="text-sm text-yellow-600">Average Price</p>
-                <p className="text-2xl font-bold text-yellow-900">{formatCurrency(averagePrice)}</p>
+                <p className="text-2xl font-bold text-yellow-900">
+                  {showPrices ? formatCurrency(averagePrice) : '***'}
+                </p>
               </div>
             </div>
           </div>
@@ -104,7 +121,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
               <div>
                 <p className="text-sm text-purple-600">Highest Sale</p>
                 <p className="text-2xl font-bold text-purple-900">
-                  {mostExpensivePlayer ? formatCurrency(mostExpensivePlayer.soldPrice || 0) : 'N/A'}
+                  {showPrices
+                    ? (mostExpensivePlayer ? formatCurrency(mostExpensivePlayer.soldPrice || 0) : 'N/A')
+                    : '***'
+                  }
                 </p>
               </div>
             </div>
@@ -148,7 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Remaining Budget</p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {formatCurrency(team.remainingBudget)}
+                        {showPrices ? formatCurrency(team.remainingBudget) : '***'}
                       </p>
                     </div>
                   </div>
@@ -160,23 +180,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                     </div>
                     <div>
                       <span className="text-gray-500">Total Spent:</span>
-                      <span className="ml-2 font-medium">{formatCurrency(team.budget - team.remainingBudget)}</span>
+                      <span className="ml-2 font-medium">
+                        {showPrices ? formatCurrency(team.budget - team.remainingBudget) : '***'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Avg. Price:</span>
                       <span className="ml-2 font-medium">
-                        {team.players.length > 0 
-                          ? formatCurrency((team.budget - team.remainingBudget) / team.players.length)
-                          : 'N/A'
+                        {showPrices
+                          ? (team.players.length > 0
+                              ? formatCurrency((team.budget - team.remainingBudget) / team.players.length)
+                              : 'N/A'
+                            )
+                          : '***'
                         }
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Most Expensive:</span>
                       <span className="ml-2 font-medium">
-                        {team.players.length > 0
-                          ? formatCurrency(Math.max(...team.players.map(p => p.soldPrice || 0)))
-                          : 'N/A'
+                        {showPrices
+                          ? (team.players.length > 0
+                              ? formatCurrency(Math.max(...team.players.map(p => p.soldPrice || 0)))
+                              : 'N/A'
+                            )
+                          : '***'
                         }
                       </span>
                     </div>
@@ -189,8 +217,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                           <tr>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Base Price</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sold Price</th>
+                            {showPrices && <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Base Price</th>}
+                            {showPrices && <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sold Price</th>}
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>
                           </tr>
                         </thead>
@@ -209,10 +237,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                                 </div>
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-500">{player.role || 'N/A'}</td>
-                              <td className="px-4 py-2 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>
-                              <td className="px-4 py-2 text-sm font-medium text-green-600">
+                              {showPrices && <td className="px-4 py-2 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>}
+                              {showPrices && <td className="px-4 py-2 text-sm font-medium text-green-600">
                                 {formatCurrency(player.soldPrice || 0)}
-                              </td>
+                              </td>}
                               <td className="px-4 py-2 text-sm text-gray-500">{player.rating || 'N/A'}</td>
                             </tr>
                           ))}
@@ -235,8 +263,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Base Price</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Final Price</th>
+                    {showPrices && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Base Price</th>}
+                    {showPrices && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Final Price</th>}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   </tr>
@@ -260,14 +288,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">{player.role || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>
-                          <td className="px-4 py-3 text-sm font-medium">
+                          {showPrices && <td className="px-4 py-3 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>}
+                          {showPrices && <td className="px-4 py-3 text-sm font-medium">
                             {player.soldPrice ? (
                               <span className="text-green-600">{formatCurrency(player.soldPrice)}</span>
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
-                          </td>
+                          </td>}
                           <td className="px-4 py-3 text-sm text-gray-500">
                             {team ? team.name : '-'}
                           </td>
@@ -306,7 +334,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                       <p className="text-xl font-bold text-blue-900">{mostExpensivePlayer.name}</p>
                       <p className="text-blue-700">{mostExpensivePlayer.role || 'N/A'}</p>
                       <p className="text-2xl font-bold text-blue-900 mt-2">
-                        {formatCurrency(mostExpensivePlayer.soldPrice || 0)}
+                        {showPrices ? formatCurrency(mostExpensivePlayer.soldPrice || 0) : '***'}
                       </p>
                     </div>
                   ) : (
@@ -320,7 +348,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                     <p className="text-xl font-bold text-green-900">{teamWithMostSpent.name}</p>
                     <p className="text-green-700">{teamWithMostSpent.players.length} players</p>
                     <p className="text-2xl font-bold text-green-900 mt-2">
-                      {formatCurrency(teamWithMostSpent.budget - teamWithMostSpent.remainingBudget)}
+                      {showPrices ? formatCurrency(teamWithMostSpent.budget - teamWithMostSpent.remainingBudget) : '***'}
                     </p>
                   </div>
                 </div>
@@ -351,7 +379,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">Avg Price:</span>
-                            <span>{formatCurrency(avgPrice)}</span>
+                            <span>{showPrices ? formatCurrency(avgPrice) : '***'}</span>
                           </div>
                         </div>
                       </div>
