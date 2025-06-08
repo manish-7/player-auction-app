@@ -97,10 +97,13 @@ const TeamCard: React.FC<TeamCardProps> = ({
               <span className="font-medium">{formatCurrency(team.remainingBudget)}</span>
             </div>
 
-            {/* Max Bid Info */}
+            {/* Max Bid Info - Inline */}
             {maxBid !== undefined && isEligible && (
-              <div className="text-xs text-orange-600 mt-1 bg-orange-50 px-2 py-1 rounded">
-                Max bid: {formatCurrency(maxBid)}
+              <div className="flex items-center text-xs mt-1">
+                <span className="text-gray-500 mr-2">Max bid:</span>
+                <span className="font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+                  {formatCurrency(maxBid)}
+                </span>
               </div>
             )}
           </div>

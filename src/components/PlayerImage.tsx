@@ -39,59 +39,40 @@ const PlayerImage: React.FC<PlayerImageProps> = ({
   useEffect(() => {
     if (!imageUrl) {
       setImageLoading(false);
+      setImageError(false);
+      setCachedImageUrl(null);
       return;
     }
+
+    // Reset states when imageUrl changes
+    setImageError(false);
+    setImageLoading(true);
+    setCachedImageUrl(null);
 
     // Check if image is already cached
     const cached = imageCacheService.getCachedImage(imageUrl);
     if (cached) {
       setCachedImageUrl(cached);
       setImageLoading(false);
-      setImageError(false);
       return;
     }
 
-    // If image was preloaded, it should load faster from browser cache
+    // If image was preloaded, use the original URL directly
     if (imageCacheService.isPreloaded(imageUrl)) {
-      setImageLoading(true);
-      setImageError(false);
-      // Let the img element handle loading from browser cache
+      setCachedImageUrl(imageUrl);
+      setImageLoading(false);
       return;
     }
 
-    // Check if image is currently loading
-    if (imageCacheService.isLoading(imageUrl)) {
-      // Wait for the loading to complete
-      const checkCache = () => {
-        const cached = imageCacheService.getCachedImage(imageUrl);
-        if (cached) {
-          setCachedImageUrl(cached);
-          setImageLoading(false);
-          setImageError(false);
-        } else if (!imageCacheService.isLoading(imageUrl)) {
-          // Loading failed
-          setImageError(true);
-          setImageLoading(false);
-        } else {
-          // Still loading, check again
-          setTimeout(checkCache, 100);
-        }
-      };
-      setTimeout(checkCache, 100);
-      return;
-    }
-
-    // Load image through cache service
-    setImageLoading(true);
-    setImageError(false);
+    // Load image through cache service with fallback
     imageCacheService.loadImage(imageUrl)
       .then(cached => {
         setCachedImageUrl(cached);
         setImageLoading(false);
-        setImageError(false);
       })
       .catch(() => {
-        setImageError(true);
+        // Fallback to direct URL if cache service fails
+        setCachedImageUrl(imageUrl);
         setImageLoading(false);
       });
   }, [imageUrl]);

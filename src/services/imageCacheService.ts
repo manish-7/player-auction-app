@@ -110,34 +110,9 @@ class ImageCacheService {
       img.crossOrigin = 'anonymous';
 
       img.onload = () => {
-        // Try to create a canvas-based cache for better performance
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-
-          if (ctx) {
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            ctx.drawImage(img, 0, 0);
-
-            // Convert to blob URL for caching
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const objectUrl = URL.createObjectURL(blob);
-                resolve(objectUrl);
-              } else {
-                // Fallback to original URL
-                resolve(url);
-              }
-            }, 'image/jpeg', 0.9);
-          } else {
-            resolve(url);
-          }
-        } catch (error) {
-          // CORS or other canvas errors - fallback to original URL
-          console.log(`Canvas caching failed for ${url}, using direct URL`);
-          resolve(url);
-        }
+        // Simply resolve with the original URL since the image is now in browser cache
+        // This avoids issues with blob URLs becoming invalid over time
+        resolve(url);
       };
 
       img.onerror = () => {
@@ -191,13 +166,6 @@ class ImageCacheService {
    * Clear cache
    */
   clearCache(): void {
-    // Revoke object URLs to free memory
-    this.cache.forEach(objectUrl => {
-      if (objectUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    });
-
     this.cache.clear();
     this.loadingPromises.clear();
     this.preloadProgress.clear();
