@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Check, Star } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import type { Team } from '../types';
 import { formatCurrency } from '../utils/excelUtils';
 import PlayerImage from './PlayerImage';
@@ -59,7 +59,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
   // Use forceExpanded when set, otherwise use local state
   const shouldShowExpanded = forceExpanded !== null ? forceExpanded : isExpanded;
   const cardClasses = `
-    relative p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer min-h-[140px]
+    relative p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer min-h-[120px]
     ${isHighestBidder
       ? 'border-green-500 bg-green-50 shadow-md'
       : isSelected
@@ -76,85 +76,91 @@ const TeamCard: React.FC<TeamCardProps> = ({
 
   return (
     <div className={cardClasses} onClick={isEligible && !disabled ? onSelect : undefined}>
-      {/* Compact Layout */}
-      <div className="flex items-start justify-between">
-        {/* Left: Logo and Name */}
-        <div className="flex items-center space-x-2 flex-1 min-w-0">
+      {/* Clean, Compact Layout */}
+      <div className="space-y-2">
+        {/* Team Name - Full Row */}
+        <div className="flex items-center space-x-2">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
             style={logoStyle}
           >
             {team.logo}
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-sm text-gray-900 truncate">
-              {team.name}
-            </h3>
-            <div className="flex items-center text-xs text-gray-500">
-              <Users className="w-3 h-3 mr-1" />
-              <span>{team.players?.length || 0}/{team.maxPlayers}</span>
-              <span className="mx-1">•</span>
-              <span className="font-medium">{formatCurrency(team.remainingBudget)}</span>
+          <h3 className="font-medium text-base text-gray-900 truncate flex-1">
+            {team.name}
+          </h3>
+          {isHighestBidder && (
+            <div className="bg-green-500 text-white rounded-full p-1">
+              <Check className="w-3 h-3" />
             </div>
-
-            {/* Max Bid Info - Inline */}
-            {maxBid !== undefined && isEligible && (
-              <div className="flex items-center text-xs mt-1">
-                <span className="text-gray-500 mr-2">Max bid:</span>
-                <span className="font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-                  {formatCurrency(maxBid)}
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Right: Action Buttons */}
-        <div className="flex flex-col items-end space-y-2 ml-2">
-          {isEligible && !disabled && (
-            <>
-              {/* Prominent One-Click BID Button */}
-              {onQuickBid && minBid !== undefined && maxBid !== undefined && maxBid >= minBid && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickBid();
-                  }}
-                  className="py-5 px-4 rounded-md text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors min-w-[100px] shadow-sm"
-                  title={`Quick bid: ${formatCurrency(minBid)}`}
-                >
-                  <div className="flex items-center justify-center space-x-1">
-                    <span>⚡</span>
-                    <span>BID {formatCurrency(minBid)}</span>
-                  </div>
-                </button>
-              )}
+        {/* Budget and Players - Clean Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="text-left">
+              <div className="text-lg font-semibold text-gray-900">
+                {formatCurrency(team.remainingBudget)}
+              </div>
+              <div className="text-xs text-gray-500">Budget Left</div>
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-medium text-gray-700">
+                {team.players?.length || 0}/{team.maxPlayers}
+              </div>
+              <div className="text-xs text-gray-500">Players</div>
+            </div>
+          </div>
 
-              {/* Pass Button */}
+          {/* Max Bid - Right Side */}
+          {maxBid !== undefined && isEligible && (
+            <div className="text-right">
+              <div className="text-sm font-medium text-orange-600">
+                {formatCurrency(maxBid)}
+              </div>
+              <div className="text-xs text-gray-500">Max Bid</div>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons - Compact */}
+        {isEligible && !disabled && (
+          <div className="flex space-x-2">
+            {/* BID Button */}
+            {onQuickBid && minBid !== undefined && maxBid !== undefined && maxBid >= minBid && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onPass();
+                  onQuickBid();
                 }}
-                className="py-2 px-4 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors min-w-[100px]"
+                className="flex-1 py-2 px-3 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                title={`Quick bid: ${formatCurrency(minBid)}`}
               >
-                Pass
+                <div className="flex items-center justify-center space-x-1">
+                  <span>⚡</span>
+                  <span>BID {formatCurrency(minBid)}</span>
+                </div>
               </button>
-            </>
-          )}
+            )}
 
-          {!isEligible && (
-            <div className="text-xs text-gray-500 px-2 text-center">
-              {team.remainingBudget < (minBid || 100) ? 'No Budget' :
-               (team.players?.length || 0) >= team.maxPlayers ? 'Full' : 'Passed'}
-            </div>
-          )}
-        </div>
+            {/* Pass Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPass();
+              }}
+              className="px-4 py-2 rounded-md text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              Pass
+            </button>
+          </div>
+        )}
 
-        {/* Status Indicators */}
-        {isHighestBidder && (
-          <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full p-1">
-            <Check className="w-3 h-3" />
+        {!isEligible && (
+          <div className="text-center py-1 text-sm text-gray-500">
+            {team.remainingBudget < (minBid || 100) ? 'Insufficient Budget' :
+             (team.players?.length || 0) >= team.maxPlayers ? 'Squad Full' : 'Passed'}
           </div>
         )}
       </div>

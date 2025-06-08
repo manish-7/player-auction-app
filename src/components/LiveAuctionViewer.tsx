@@ -223,14 +223,14 @@ const LiveAuctionViewer: React.FC = () => {
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      {/* Header - Compact */}
+      <div className="bg-white shadow-sm border-b border-gray-200 p-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Live Auction</h1>
-            <p className="text-gray-600">Watching as {viewerName}</p>
+            <h1 className="text-xl font-semibold text-gray-900">Live Auction</h1>
+            <p className="text-sm text-gray-600">Watching as {viewerName}</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center text-sm text-blue-600">
               <Eye className="w-4 h-4 mr-1" />
               {viewerCount} watching
@@ -257,72 +257,77 @@ const LiveAuctionViewer: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Current Player */}
+      <div className="max-w-7xl mx-auto p-4 space-y-4">
+        {/* Current Player - Compact Card */}
         {currentPlayer && (
-          <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
-            <div className="flex items-center justify-center space-x-6">
-              {/* Player Image - Fixed Size */}
-              <div className="flex-shrink-0">
-                <PlayerImage
-                  imageUrl={currentPlayer.imageUrl}
-                  playerName={currentPlayer.name}
-                  size="2xl"
-                  className="shadow-lg border-4 border-white"
-                />
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              {/* Bid Information - Far Left */}
+              <div className="text-left flex-shrink-0">
+                {auctionState.highestBid ? (
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {formatCurrency(auctionState.highestBid.amount)}
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      by {tournament.teams?.find(t => t.id === auctionState.highestBid?.teamId)?.name || 'Unknown Team'}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {formatCurrency(currentPlayer.basePrice || tournament.settings.minimumBid)}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Player Info - Compact Layout */}
-              <div className="text-center w-80">
-                {/* Player Name - Single Line */}
-                <div className="flex items-center justify-center mb-4">
-                  <h2 className="text-3xl font-bold text-gray-900 leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+              {/* Player Info - Centered */}
+              <div className="flex items-center space-x-4 flex-shrink-0">
+                <div className="flex-shrink-0">
+                  <PlayerImage
+                    imageUrl={currentPlayer.imageUrl}
+                    playerName={currentPlayer.name}
+                    size="xl"
+                    className="shadow-md"
+                  />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
                     {currentPlayer.name}
                   </h2>
-                </div>
-
-                {/* Player Role - Fixed Height */}
-                <div className="h-8 flex items-center justify-center mb-4">
-                  {currentPlayer.role ? (
-                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                  {currentPlayer.role && (
+                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
                       {currentPlayer.role}
-                    </span>
-                  ) : (
-                    <span className="inline-block opacity-0 text-sm font-medium px-3 py-1">
-                      Placeholder
                     </span>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Bid Information */}
-            <div className="mt-6">
-              {auctionState.highestBid ? (
-                <div className="text-center">
-                  <p className="text-sm text-blue-600 font-medium mb-2">CURRENT BID</p>
-                  <div className="text-4xl font-bold text-blue-600">
-                    {formatCurrency(auctionState.highestBid.amount)}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    by {tournament.teams?.find(t => t.id === auctionState.highestBid?.teamId)?.name || 'Unknown Team'}
-                  </p>
+              {/* Progress Indicator - Far Right */}
+              <div className="text-right flex-shrink-0">
+                <div className="text-lg font-bold text-gray-700">
+                  {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
                 </div>
-              ) : (
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 font-medium mb-2">BASE PRICE</p>
-                  <div className="text-4xl font-bold text-gray-900">
-                    {formatCurrency(currentPlayer.basePrice || tournament.settings.minimumBid)}
-                  </div>
+                <div className="text-sm text-gray-500">Players</div>
+                <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                    }}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Teams Grid */}
-        <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 p-4">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Teams</h3>
+        {/* Teams Grid - Compact */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">Teams</h3>
           <div className="team-grid">
             {tournament.teams && tournament.teams.length > 0 ? (
               tournament.teams.map((team) => {
@@ -361,36 +366,10 @@ const LiveAuctionViewer: React.FC = () => {
                 );
               })
             ) : (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 py-4">
                 No teams data available
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Auction Progress */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Progress</h3>
-            <div className="text-right">
-              <div className="text-lg font-bold text-blue-600">
-                {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
-              </div>
-              <div className="text-xs text-gray-500">Players</div>
-            </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
-              style={{
-                width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
-              }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-1">
-            <span>Start</span>
-            <span>{tournament.players?.length ? Math.round((((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100) : 0}%</span>
-            <span>Finish</span>
           </div>
         </div>
       </div>

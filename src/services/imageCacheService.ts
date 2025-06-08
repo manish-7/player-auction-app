@@ -49,7 +49,7 @@ class ImageCacheService {
    * Simple image preloading that just loads into browser cache
    */
   private simplePreloadImage(url: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const img = new Image();
       let hasTimedOut = false;
 
@@ -58,14 +58,14 @@ class ImageCacheService {
         img.onerror = null;
       };
 
-      img.onload = () => {
+      const handleLoad = () => {
         if (!hasTimedOut) {
           cleanup();
           resolve();
         }
       };
 
-      img.onerror = () => {
+      const handleError = () => {
         if (!hasTimedOut) {
           cleanup();
           // Don't reject on error - just resolve to avoid blocking other images
@@ -73,6 +73,9 @@ class ImageCacheService {
           resolve();
         }
       };
+
+      img.onload = handleLoad;
+      img.onerror = handleError;
 
       // Set a timeout for slow-loading images
       const timeout = setTimeout(() => {
@@ -82,19 +85,19 @@ class ImageCacheService {
         resolve(); // Resolve instead of reject to avoid blocking
       }, 8000); // 8 second timeout
 
-      // Clear timeout on success/error
-      const originalOnload = img.onload;
-      const originalOnerror = img.onerror;
-
-      img.onload = (e) => {
+      // Wrap handlers to clear timeout
+      const wrappedOnload = () => {
         clearTimeout(timeout);
-        originalOnload?.(e);
+        handleLoad();
       };
 
-      img.onerror = (e) => {
+      const wrappedOnerror = () => {
         clearTimeout(timeout);
-        originalOnerror?.(e);
+        handleError();
       };
+
+      img.onload = wrappedOnload;
+      img.onerror = wrappedOnerror;
 
       // Don't use crossOrigin to avoid CORS issues
       img.src = url;
@@ -183,19 +186,19 @@ class ImageCacheService {
         reject(new Error(`Image load timeout: ${url}`));
       }, 10000); // 10 second timeout
 
-      // Clear timeout on success/error
-      const originalOnload = img.onload;
-      const originalOnerror = img.onerror;
-
-      img.onload = (e) => {
+      // Wrap handlers to clear timeout
+      const wrappedOnload = () => {
         clearTimeout(timeout);
-        originalOnload?.(e);
+        handleSuccess();
       };
 
-      img.onerror = (e) => {
+      const wrappedOnerror = () => {
         clearTimeout(timeout);
-        originalOnerror?.(e);
+        handleError();
       };
+
+      img.onload = wrappedOnload;
+      img.onerror = wrappedOnerror;
 
       // Start with crossOrigin for images that support it
       img.crossOrigin = 'anonymous';
