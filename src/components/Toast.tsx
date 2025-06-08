@@ -77,7 +77,7 @@ const Toast: React.FC<ToastProps> = ({
         transform transition-all duration-300 ease-in-out
         ${isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
         ${getBackgroundColor()}
-        border rounded-lg shadow-lg p-4 mb-3 max-w-sm w-full
+        border rounded-lg shadow-lg p-4 w-80 min-w-0
       `}
     >
       <div className="flex items-start space-x-3">

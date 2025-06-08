@@ -3,6 +3,7 @@ class ImageCacheService {
   private loadingPromises = new Map<string, Promise<string>>();
   private preloadProgress = new Map<string, { loaded: number; total: number }>();
   private preloadedImages = new Set<string>(); // Track successfully preloaded images
+  private cachingEnabled = true; // Allow disabling caching if CORS issues persist
 
   /**
    * Preload multiple images and track progress
@@ -50,20 +51,52 @@ class ImageCacheService {
   private simplePreloadImage(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      let hasTimedOut = false;
+
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
+      };
 
       img.onload = () => {
-        resolve();
+        if (!hasTimedOut) {
+          cleanup();
+          resolve();
+        }
       };
 
       img.onerror = () => {
-        reject(new Error(`Failed to preload image: ${url}`));
+        if (!hasTimedOut) {
+          cleanup();
+          // Don't reject on error - just resolve to avoid blocking other images
+          console.warn(`Failed to preload image (ignoring): ${url}`);
+          resolve();
+        }
       };
 
       // Set a timeout for slow-loading images
-      setTimeout(() => {
-        reject(new Error(`Image preload timeout: ${url}`));
-      }, 10000); // 10 second timeout
+      const timeout = setTimeout(() => {
+        hasTimedOut = true;
+        cleanup();
+        console.warn(`Image preload timeout (ignoring): ${url}`);
+        resolve(); // Resolve instead of reject to avoid blocking
+      }, 8000); // 8 second timeout
 
+      // Clear timeout on success/error
+      const originalOnload = img.onload;
+      const originalOnerror = img.onerror;
+
+      img.onload = (e) => {
+        clearTimeout(timeout);
+        originalOnload?.(e);
+      };
+
+      img.onerror = (e) => {
+        clearTimeout(timeout);
+        originalOnerror?.(e);
+      };
+
+      // Don't use crossOrigin to avoid CORS issues
       img.src = url;
     });
   }
@@ -74,6 +107,11 @@ class ImageCacheService {
   async loadImage(url: string): Promise<string> {
     if (!url || url.trim() === '') {
       throw new Error('Invalid image URL');
+    }
+
+    // If caching is disabled, return URL directly
+    if (!this.cachingEnabled) {
+      return url;
     }
 
     // Return cached version if available
@@ -105,31 +143,62 @@ class ImageCacheService {
   private createImageLoadPromise(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      let hasTimedOut = false;
+      let hasRetried = false;
 
-      // Enable cross-origin for images that support it
-      img.crossOrigin = 'anonymous';
-
-      img.onload = () => {
-        // Simply resolve with the original URL since the image is now in browser cache
-        // This avoids issues with blob URLs becoming invalid over time
-        resolve(url);
+      const cleanup = () => {
+        img.onload = null;
+        img.onerror = null;
       };
 
-      img.onerror = () => {
-        // Try without crossOrigin for images that don't support it
-        if (img.crossOrigin) {
-          img.crossOrigin = '';
-          img.src = url; // Retry without CORS
-        } else {
-          reject(new Error(`Failed to load image: ${url}`));
+      const handleSuccess = () => {
+        if (!hasTimedOut) {
+          cleanup();
+          resolve(url);
         }
       };
 
-      // Set a timeout for slow-loading images
-      setTimeout(() => {
-        reject(new Error(`Image load timeout: ${url}`));
-      }, 15000); // 15 second timeout
+      const handleError = () => {
+        if (hasTimedOut) return;
 
+        // Try without crossOrigin for images that don't support it
+        if (!hasRetried && img.crossOrigin) {
+          hasRetried = true;
+          img.crossOrigin = '';
+          img.src = url; // Retry without CORS
+          return;
+        }
+
+        cleanup();
+        reject(new Error(`Failed to load image: ${url}`));
+      };
+
+      img.onload = handleSuccess;
+      img.onerror = handleError;
+
+      // Set a timeout for slow-loading images
+      const timeout = setTimeout(() => {
+        hasTimedOut = true;
+        cleanup();
+        reject(new Error(`Image load timeout: ${url}`));
+      }, 10000); // 10 second timeout
+
+      // Clear timeout on success/error
+      const originalOnload = img.onload;
+      const originalOnerror = img.onerror;
+
+      img.onload = (e) => {
+        clearTimeout(timeout);
+        originalOnload?.(e);
+      };
+
+      img.onerror = (e) => {
+        clearTimeout(timeout);
+        originalOnerror?.(e);
+      };
+
+      // Start with crossOrigin for images that support it
+      img.crossOrigin = 'anonymous';
       img.src = url;
     });
   }
@@ -190,6 +259,11 @@ class ImageCacheService {
     players: Array<{ imageUrl?: string; name: string }>,
     onProgress?: (loaded: number, total: number) => void
   ): Promise<void> {
+    if (!this.cachingEnabled) {
+      console.log('Image caching disabled, skipping preload');
+      return;
+    }
+
     const imageUrls = players
       .map(player => player.imageUrl)
       .filter((url): url is string => Boolean(url));
@@ -201,6 +275,26 @@ class ImageCacheService {
 
     console.log(`Preloading images for ${imageUrls.length} players`);
     await this.preloadImages(imageUrls, onProgress);
+  }
+
+  /**
+   * Enable or disable image caching
+   */
+  setCachingEnabled(enabled: boolean): void {
+    this.cachingEnabled = enabled;
+    if (!enabled) {
+      console.log('Image caching disabled');
+      this.clearCache();
+    } else {
+      console.log('Image caching enabled');
+    }
+  }
+
+  /**
+   * Check if caching is enabled
+   */
+  isCachingEnabled(): boolean {
+    return this.cachingEnabled;
   }
 }
 

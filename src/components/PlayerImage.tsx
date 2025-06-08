@@ -71,7 +71,8 @@ const PlayerImage: React.FC<PlayerImageProps> = ({
         setImageLoading(false);
       })
       .catch(() => {
-        // Fallback to direct URL if cache service fails
+        // Fallback to direct URL if cache service fails (e.g., CORS issues)
+        console.warn(`Cache service failed for ${imageUrl}, using direct URL`);
         setCachedImageUrl(imageUrl);
         setImageLoading(false);
       });

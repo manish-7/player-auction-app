@@ -262,36 +262,37 @@ const LiveAuctionViewer: React.FC = () => {
         {currentPlayer && (
           <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
             <div className="flex items-center justify-center space-x-6">
-              {/* Player Image */}
-              <PlayerImage
-                imageUrl={currentPlayer.imageUrl}
-                playerName={currentPlayer.name}
-                size="2xl"
-                className="shadow-lg border-4 border-white flex-shrink-0"
-              />
+              {/* Player Image - Fixed Size */}
+              <div className="flex-shrink-0">
+                <PlayerImage
+                  imageUrl={currentPlayer.imageUrl}
+                  playerName={currentPlayer.name}
+                  size="2xl"
+                  className="shadow-lg border-4 border-white"
+                />
+              </div>
 
-              {/* Player Info */}
-              <div className="text-center">
-                {/* Player Name */}
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  {currentPlayer.name}
-                </h2>
+              {/* Player Info - Compact Layout */}
+              <div className="text-center w-80">
+                {/* Player Name - Single Line */}
+                <div className="flex items-center justify-center mb-4">
+                  <h2 className="text-3xl font-bold text-gray-900 leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+                    {currentPlayer.name}
+                  </h2>
+                </div>
 
-                {/* Player Rating */}
-                {currentPlayer.rating && (
-                  <div className="flex items-center justify-center text-yellow-500 mb-4">
-                    <span className="text-xl">⭐ {currentPlayer.rating}/100</span>
-                  </div>
-                )}
-
-                {/* Player Role */}
-                {currentPlayer.role && (
-                  <div className="mb-4">
+                {/* Player Role - Fixed Height */}
+                <div className="h-8 flex items-center justify-center mb-4">
+                  {currentPlayer.role ? (
                     <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                       {currentPlayer.role}
                     </span>
-                  </div>
-                )}
+                  ) : (
+                    <span className="inline-block opacity-0 text-sm font-medium px-3 py-1">
+                      Placeholder
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
