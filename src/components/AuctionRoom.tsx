@@ -560,7 +560,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                         placeholder={`Min: ${formatCurrency(minBid)} • Max: ${formatCurrency(maxBid)}`}
                       />
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 max-w-md">
                       {(() => {
                         // Generate smart quick bid increments
                         const baseIncrement = settings.bidIncrement;
@@ -572,12 +572,16 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                           baseIncrement * 2,               // 2x increment
                           baseIncrement * 5,               // 5x increment
                           baseIncrement * 10,              // 10x increment
+                          baseIncrement * 20,              // 20x increment
+                          baseIncrement * 50,              // 50x increment
+                          Math.round(currentBid * 0.05),  // 5% of current bid
                           Math.round(currentBid * 0.1),   // 10% of current bid
                           Math.round(currentBid * 0.25),  // 25% of current bid
+                          Math.round(currentBid * 0.5),   // 50% of current bid
                         ].filter((inc, index, arr) => {
                           // Remove duplicates and ensure minimum increment
                           return inc >= baseIncrement && arr.indexOf(inc) === index;
-                        }).sort((a, b) => a - b).slice(0, 5); // Show max 5 options
+                        }).sort((a, b) => a - b).slice(0, 8); // Show max 8 options
 
                         const buttons = increments.map((increment) => {
                           const newAmount = minBid + increment;
@@ -585,7 +589,8 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                             <button
                               key={increment}
                               onClick={() => setBidAmount(newAmount)}
-                              className="btn-secondary text-xs py-1 px-2 whitespace-nowrap"
+                              className="btn-secondary text-xs py-1 px-1.5 whitespace-nowrap text-center min-w-0"
+                              title={`Add ${formatCurrency(increment)} to current bid`}
                             >
                               +{formatCurrency(increment)}
                             </button>

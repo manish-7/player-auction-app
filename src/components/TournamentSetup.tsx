@@ -219,12 +219,22 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
             <p className="text-sm text-gray-500 mb-3">
               Select a budget preset. Minimum bid will be automatically calculated.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
               {[
+                { label: '₹500', value: 500 },
                 { label: '₹1000', value: 1000 },
+                { label: '₹5000', value: 5000 },
+                { label: '₹10K', value: 10000 },
+                { label: '₹50K', value: 50000 },
+                { label: '₹1 L', value: 100000 },
+                { label: '₹5 L', value: 500000 },
                 { label: '₹10 L', value: 1000000 },
+                { label: '₹25 L', value: 2500000 },
+                { label: '₹50 L', value: 5000000 },
                 { label: '₹1 Cr', value: 10000000 },
+                { label: '₹5 Cr', value: 50000000 },
                 { label: '₹10 Cr', value: 100000000 },
+                { label: '₹25 Cr', value: 250000000 },
                 { label: '₹50 Cr', value: 500000000 },
                 { label: '₹100 Cr', value: 1000000000 },
               ].map((option) => (
