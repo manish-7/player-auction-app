@@ -109,7 +109,7 @@ const TournamentHistory: React.FC<TournamentHistoryProps> = ({ onBack, onLoadTou
                   </h3>
                   <div className="flex items-center text-sm text-gray-500 mt-1">
                     <Calendar className="w-4 h-4 mr-1" />
-                    {formatDate(savedTournament.completedAt)}
+                    {savedTournament.completedAt ? formatDate(savedTournament.completedAt) : 'In Progress'}
                   </div>
                 </div>
                 <button

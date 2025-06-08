@@ -7,12 +7,12 @@ import PlayerInventory from './components/PlayerInventory';
 import TeamSetup from './components/TeamSetup';
 import AuctionRoom from './components/AuctionRoom';
 import Dashboard from './components/Dashboard';
-import TournamentHistory from './components/TournamentHistory';
+import AuctionHistory from './components/AuctionHistory';
 
 type AppStep = 'tournament' | 'players' | 'teams' | 'auction' | 'results' | 'history';
 
 function App() {
-  const { tournament, clearStorage, restartAuction } = useAuctionStore();
+  const { tournament, clearStorage, restartAuction, loadTournament, saveCurrentAuction } = useAuctionStore();
   const { showConfirmation, ConfirmationComponent } = useConfirmation();
   const [currentStep, setCurrentStep] = useState<AppStep>('tournament');
   const [hasAutoRestored, setHasAutoRestored] = useState(false);
@@ -61,18 +61,58 @@ function App() {
 
     // Warn if navigating away from active auction
     if (currentStep === 'auction' && tournament?.isAuctionStarted && !tournament?.isAuctionCompleted && step !== 'auction') {
-      const confirmed = await showConfirmation({
-        title: 'Leave Active Auction?',
-        message: 'You are currently in an active auction. Navigating away will pause the auction. Are you sure you want to continue?',
-        confirmText: 'Yes, Leave',
-        cancelText: 'Stay Here',
+      const shouldSave = await showConfirmation({
+        title: 'Save Auction Progress?',
+        message: 'You are leaving an active auction. Would you like to save your progress before continuing?',
+        confirmText: 'Save & Continue',
+        cancelText: 'Continue Without Saving',
         type: 'warning',
         icon: <AlertTriangle className="w-6 h-6 text-white" />
       });
-      if (!confirmed) return;
+
+      if (shouldSave) {
+        // Auto-save with timestamp
+        const timestamp = new Date().toLocaleString();
+        const autoSaveName = `${tournament.name} - ${timestamp}`;
+        const savedId = saveCurrentAuction(autoSaveName);
+
+        if (savedId) {
+          console.log(`Auction auto-saved as "${autoSaveName}"`);
+        }
+      }
     }
 
     setCurrentStep(step);
+  };
+
+  const handleNewTournament = async () => {
+    // Check if there's an active tournament that should be saved
+    if (tournament && (tournament.isAuctionStarted || tournament.players.length > 0)) {
+      const shouldSave = await showConfirmation({
+        title: 'Save Current Tournament?',
+        message: `You have an active tournament "${tournament.name}" with progress. Would you like to save it before starting a new one?`,
+        confirmText: 'Save & Continue',
+        cancelText: 'Discard & Continue',
+        type: 'warning',
+        icon: <AlertTriangle className="w-6 h-6 text-white" />
+      });
+
+      if (shouldSave) {
+        // Auto-save with a timestamp-based name
+        const timestamp = new Date().toLocaleString();
+        const autoSaveName = `${tournament.name} - ${timestamp}`;
+        const savedId = saveCurrentAuction(autoSaveName);
+
+        if (savedId) {
+          // Show success message briefly
+          console.log(`Tournament auto-saved as "${autoSaveName}"`);
+        }
+      }
+    }
+
+    // Now clear and start new
+    clearStorage();
+    setCurrentStep('tournament');
   };
 
   const renderCurrentStep = () => {
@@ -100,12 +140,29 @@ function App() {
         return <AuctionRoom onComplete={() => handleStepChange('results')} />;
 
       case 'results':
-        return <Dashboard onRestart={() => handleStepChange('tournament')} />;
+        return <Dashboard
+          onRestart={() => handleStepChange('tournament')}
+          onNewTournament={handleNewTournament}
+        />;
 
       case 'history':
         return (
-          <TournamentHistory
-            onBack={() => {
+          <AuctionHistory
+            onLoadTournament={(tournamentId: string) => {
+              loadTournament(tournamentId);
+              // Navigate to appropriate step based on loaded tournament state
+              const loadedTournament = useAuctionStore.getState().tournament;
+              if (loadedTournament?.isAuctionCompleted) {
+                handleStepChange('results');
+              } else if (loadedTournament?.isAuctionStarted) {
+                handleStepChange('auction');
+              } else if (loadedTournament) {
+                handleStepChange('teams');
+              } else {
+                handleStepChange('tournament');
+              }
+            }}
+            onClose={() => {
               // Go back to appropriate step based on current tournament state
               if (tournament?.isAuctionCompleted) {
                 handleStepChange('results');
@@ -117,7 +174,6 @@ function App() {
                 handleStepChange('tournament');
               }
             }}
-            onLoadTournament={() => handleStepChange('results')}
           />
         );
 
@@ -197,6 +253,14 @@ function App() {
                       </button>
                     )}
                     <button
+                      onClick={handleNewTournament}
+                      className="bg-green-500/80 hover:bg-green-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                      title="Start a new tournament (will offer to save current one)"
+                    >
+                      <span className="hidden sm:inline">🆕 New Tournament</span>
+                      <span className="sm:hidden">🆕</span>
+                    </button>
+                    <button
                       onClick={async () => {
                         const confirmed = await showConfirmation({
                           title: 'Clear All Data?',
@@ -212,10 +276,10 @@ function App() {
                         }
                       }}
                       className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
-                      title="Clear all data and start over"
+                      title="Clear all data including history"
                     >
-                      <span className="hidden sm:inline">🆕 New Tournament</span>
-                      <span className="sm:hidden">🆕</span>
+                      <span className="hidden sm:inline">🗑️ Clear All</span>
+                      <span className="sm:hidden">🗑️</span>
                     </button>
                   </>
                 )}

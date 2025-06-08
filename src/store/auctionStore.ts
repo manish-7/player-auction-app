@@ -12,11 +12,15 @@ interface AuctionSettings {
 interface SavedTournament {
   id: string;
   tournament: Tournament;
-  completedAt: Date;
+  auctionState: AuctionState;
+  savedAt: Date;
+  completedAt?: Date;
   totalPlayers: number;
   soldPlayers: number;
   unsoldPlayers: number;
   totalSpent: number;
+  isCompleted: boolean;
+  progress: number; // percentage of auction completed
 }
 
 interface AuctionStore {
@@ -73,9 +77,13 @@ interface AuctionStore {
 
   // Tournament History
   saveTournament: () => void;
+  saveCurrentAuction: (name?: string) => string | null;
   loadTournament: (tournamentId: string) => void;
   deleteSavedTournament: (tournamentId: string) => void;
   getSavedTournaments: () => SavedTournament[];
+  getCompletedTournaments: () => SavedTournament[];
+  getIncompleteTournaments: () => SavedTournament[];
+  updateSavedTournamentName: (tournamentId: string, newName: string) => void;
 
   // Getters
   getCurrentPlayer: () => Player | null;
@@ -617,7 +625,7 @@ export const useAuctionStore = create<AuctionStore>()(
 
       // Tournament History Functions
       saveTournament: () => {
-        const { tournament } = get();
+        const { tournament, auctionState } = get();
         if (!tournament || !tournament.isAuctionCompleted) return;
 
         const soldPlayers = tournament.players.filter(p => p.soldPrice).length;
@@ -629,16 +637,58 @@ export const useAuctionStore = create<AuctionStore>()(
         const savedTournament: SavedTournament = {
           id: `saved-${tournament.id}-${Date.now()}`,
           tournament: JSON.parse(JSON.stringify(tournament)),
+          auctionState: JSON.parse(JSON.stringify(auctionState)),
+          savedAt: new Date(),
           completedAt: new Date(),
           totalPlayers: tournament.players.length,
           soldPlayers,
           unsoldPlayers,
           totalSpent,
+          isCompleted: true,
+          progress: 100,
         };
 
         set((state) => ({
           savedTournaments: [...state.savedTournaments, savedTournament],
         }));
+      },
+
+      saveCurrentAuction: (name?: string) => {
+        const { tournament, auctionState } = get();
+        if (!tournament) return null;
+
+        const soldPlayers = tournament.players.filter(p => p.soldPrice).length;
+        const unsoldPlayers = tournament.players.filter(p => p.isUnsold).length;
+        const totalSpent = tournament.teams.reduce((total, team) =>
+          total + (team.budget - team.remainingBudget), 0
+        );
+
+        const progress = tournament.players.length > 0
+          ? Math.round(((soldPlayers + unsoldPlayers) / tournament.players.length) * 100)
+          : 0;
+
+        const savedTournament: SavedTournament = {
+          id: `saved-${tournament.id}-${Date.now()}`,
+          tournament: JSON.parse(JSON.stringify({
+            ...tournament,
+            name: name || tournament.name,
+          })),
+          auctionState: JSON.parse(JSON.stringify(auctionState)),
+          savedAt: new Date(),
+          completedAt: tournament.isAuctionCompleted ? new Date() : undefined,
+          totalPlayers: tournament.players.length,
+          soldPlayers,
+          unsoldPlayers,
+          totalSpent,
+          isCompleted: tournament.isAuctionCompleted,
+          progress,
+        };
+
+        set((state) => ({
+          savedTournaments: [...state.savedTournaments, savedTournament],
+        }));
+
+        return savedTournament.id;
       },
 
       loadTournament: (tournamentId: string) => {
@@ -649,9 +699,14 @@ export const useAuctionStore = create<AuctionStore>()(
         // Use the tournament's configured bid increment
         const bidIncrement = savedTournament.tournament.settings.bidIncrement || savedTournament.tournament.settings.minimumBid;
 
+        // Load the saved auction state for incomplete auctions, or reset for completed ones
+        const auctionStateToLoad = savedTournament.isCompleted
+          ? initialAuctionState
+          : (savedTournament.auctionState || initialAuctionState);
+
         set((state) => ({
           tournament: savedTournament.tournament,
-          auctionState: initialAuctionState,
+          auctionState: auctionStateToLoad,
           bidHistory: [],
           settings: {
             ...state.settings,
@@ -669,8 +724,36 @@ export const useAuctionStore = create<AuctionStore>()(
       getSavedTournaments: () => {
         const { savedTournaments } = get();
         return savedTournaments.sort((a, b) =>
-          new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+          new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
         );
+      },
+
+      getCompletedTournaments: () => {
+        const { savedTournaments } = get();
+        return savedTournaments
+          .filter(st => st.isCompleted)
+          .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
+      },
+
+      getIncompleteTournaments: () => {
+        const { savedTournaments } = get();
+        return savedTournaments
+          .filter(st => !st.isCompleted)
+          .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+      },
+
+      updateSavedTournamentName: (tournamentId: string, newName: string) => {
+        set((state) => ({
+          savedTournaments: state.savedTournaments.map(st =>
+            st.id === tournamentId
+              ? {
+                  ...st,
+                  tournament: { ...st.tournament, name: newName },
+                  savedAt: new Date() // Update saved time when name is changed
+                }
+              : st
+          ),
+        }));
       },
     }),
     {

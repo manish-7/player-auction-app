@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Timer, Trophy, SkipForward, Zap, Undo, Share2, Copy, Users } from 'lucide-react';
+import { Timer, Trophy, SkipForward, Zap, Undo, Share2, Copy, Users, Save } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency } from '../utils/excelUtils';
 import { useAuctionSharing } from '../hooks/useAuctionSharing';
@@ -8,6 +8,7 @@ import ToastContainer from './ToastContainer';
 import { useToast } from '../hooks/useToast';
 import TeamCard from './TeamCard';
 import PlayerImage from './PlayerImage';
+import SaveAuctionDialog from './SaveAuctionDialog';
 
 interface AuctionRoomProps {
   onComplete: () => void;
@@ -31,6 +32,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     getMaxBidForTeam,
     endAuction,
     areAllTeamsFull,
+    saveCurrentAuction,
   } = useAuctionStore();
 
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -42,6 +44,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showShareDemo, setShowShareDemo] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Toast notifications
   const { toasts, removeToast, success, warning } = useToast();
@@ -186,6 +189,17 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const handleStopSharing = async () => {
     await stopSharing();
     setShowShareDialog(false);
+  };
+
+  const handleSaveAuction = (name: string) => {
+    const savedId = saveCurrentAuction(name);
+    if (savedId) {
+      success(
+        'Auction Saved!',
+        `"${name}" has been saved and can be resumed later from the auction history.`,
+        5000
+      );
+    }
   };
 
   if (!tournament || !currentPlayer) {
@@ -439,6 +453,14 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               </button>
             )}
 
+            <button
+              onClick={() => setShowSaveDialog(true)}
+              className="flex items-center text-sm text-purple-600 hover:text-purple-800 transition-colors px-2 py-1 rounded border border-purple-200 hover:bg-purple-50"
+              title="Save auction progress"
+            >
+              <Save className="w-4 h-4 mr-1" />
+              <span>Save</span>
+            </button>
             <button
               onClick={() => setShowEndAuctionDialog(true)}
               className="flex items-center text-sm text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded border border-red-200 hover:bg-red-50"
@@ -828,6 +850,15 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       <ShareAuctionDemo
         isVisible={showShareDemo}
         onClose={() => setShowShareDemo(false)}
+      />
+
+      {/* Save Auction Dialog */}
+      <SaveAuctionDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveAuction}
+        currentName={tournament?.name || 'My Auction'}
+        isCompleted={false}
       />
     </div>
   );

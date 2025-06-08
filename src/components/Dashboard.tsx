@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff, Save } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency, exportAuctionResults } from '../utils/excelUtils';
 import PlayerImage from './PlayerImage';
+import SaveAuctionDialog from './SaveAuctionDialog';
 
 interface DashboardProps {
   onRestart: () => void;
+  onNewTournament?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
-  const { tournament, resetAuction } = useAuctionStore();
+const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => {
+  const { tournament, saveCurrentAuction } = useAuctionStore();
   const [activeTab, setActiveTab] = useState<'teams' | 'players' | 'stats'>('teams');
   const [showPrices, setShowPrices] = useState(true);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   if (!tournament) {
     return <div>No tournament data available</div>;
@@ -21,9 +24,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
     exportAuctionResults(tournament);
   };
 
-  const handleRestart = () => {
-    resetAuction();
-    onRestart();
+  const handleSaveAuction = (name: string) => {
+    const savedId = saveCurrentAuction(name);
+    if (savedId) {
+      // Could add a toast notification here if we had the toast hook
+      console.log(`Auction "${name}" saved successfully!`);
+    }
+  };
+
+  const handleNewTournament = () => {
+    // Auto-save current completed auction before starting new one
+    if (tournament) {
+      const timestamp = new Date().toLocaleString();
+      const autoSaveName = `${tournament.name} - ${timestamp}`;
+      saveCurrentAuction(autoSaveName);
+      console.log(`Completed auction auto-saved as "${autoSaveName}"`);
+    }
+
+    // Call the parent's new tournament handler or restart
+    if (onNewTournament) {
+      onNewTournament();
+    } else {
+      onRestart();
+    }
   };
 
   // Calculate statistics
@@ -66,6 +89,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
               {showPrices ? 'Hide Prices' : 'Show Prices'}
             </button>
             <button
+              onClick={() => setShowSaveDialog(true)}
+              className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Results
+            </button>
+            <button
               onClick={handleExportResults}
               className="btn-success inline-flex items-center"
             >
@@ -73,11 +103,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
               Export Results
             </button>
             <button
-              onClick={handleRestart}
+              onClick={handleNewTournament}
               className="btn-secondary inline-flex items-center"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
-              New Auction
+              New Tournament
             </button>
           </div>
         </div>
@@ -391,6 +421,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart }) => {
           )}
         </div>
       </div>
+
+      {/* Save Auction Dialog */}
+      <SaveAuctionDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveAuction}
+        currentName={tournament?.name || 'My Auction'}
+        isCompleted={true}
+      />
     </div>
   );
 };
