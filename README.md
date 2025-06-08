@@ -1,26 +1,42 @@
 # 🏏 IPL-Style Player Auction App
 
-A comprehensive React-based application for conducting IPL-style cricket player auctions with real-time bidding, team management, and detailed analytics.
+A comprehensive React-based application for conducting IPL-style cricket player auctions with real-time bidding, team management, live sharing, and detailed analytics.
 
 ## ✨ Features
 
-### 🔧 Functional Requirements
+### 🔧 Core Functionality
 - **Tournament Configuration**: Set up tournaments with custom team count, player limits, and budgets
-- **Excel Player Import**: Upload player data via Excel files with validation
-- **Team Management**: Customize team names and view budget allocations
-- **Real-time Auction**: Interactive bidding system with timer and live updates
+- **Excel Player Import**: Upload player data via Excel files with validation and player images
+- **Team Management**: Customize team names, colors, and view budget allocations
+- **Real-time Auction**: Interactive bidding system with timer, quick bids, and live updates
+- **Live Auction Sharing**: Share auctions in real-time with multiple viewers via unique links
 - **Comprehensive Dashboard**: Detailed results, statistics, and team compositions
 - **Export Results**: Download auction results in Excel format
+- **Price Visibility Control**: Toggle to hide/show prices for privacy or presentation
 
 ### 🎯 Key Capabilities
-- ✅ Tournament setup with configurable parameters
-- ✅ Excel file upload with data validation
-- ✅ Real-time auction room with bidding controls
-- ✅ Team budget and player limit constraints
-- ✅ Automatic sold/unsold player management
+- ✅ Tournament setup with configurable parameters and quick budget options
+- ✅ Excel file upload with data validation and player image support
+- ✅ Real-time auction room with enhanced bidding controls and quick bid options
+- ✅ Live auction sharing with Firebase real-time synchronization
+- ✅ Team budget and player limit constraints with intelligent validation
+- ✅ Automatic sold/unsold player management with randomization
+- ✅ Manual auction ending with confirmation dialogs
+- ✅ Player image display with caching and placeholder support
+- ✅ Configurable bid increments and minimum bid amounts
+- ✅ Currency formatting with shortened display (e.g., "31cr")
+- ✅ Price visibility toggle for both live auction and results
 - ✅ Comprehensive statistics and analytics
 - ✅ Export functionality for results
 - ✅ Responsive design for all devices
+
+### 🔥 Advanced Features
+- **Live Sharing**: Real-time auction viewing with Firebase integration
+- **Player Images**: Visual player cards with image caching
+- **Smart Bidding**: Quick bid buttons and intelligent bid validation
+- **Enhanced UX**: Compact team cards, better layouts, and improved navigation
+- **Auction Control**: Manual end auction, undo functionality, and better flow
+- **Privacy Options**: Hide/show prices for different viewing scenarios
 
 ## 🚀 Getting Started
 
@@ -92,8 +108,10 @@ npm run deploy
    - **Role** (Required): Batsman, Bowler, All-Rounder, Wicket-Keeper
    - **Base Price** (Optional): Starting price in rupees
    - **Rating** (Optional): Player rating 0-100
+   - **Image URL** (Optional): URL to player's image
 3. Upload your Excel file
 4. Review validation results and confirm
+5. Player images will be automatically loaded and cached
 
 ### Step 3: Team Setup
 1. Customize team names or use default IPL team names
@@ -102,18 +120,37 @@ npm run deploy
 4. Start the auction
 
 ### Step 4: Auction Room
-1. **Current Player Display**: See player details, role, and base price
-2. **Place Bids**: Select team and enter bid amount
-3. **Real-time Updates**: View highest bid and bidding team
-4. **Timer**: 30-second countdown for each player
-5. **Quick Actions**: Mark players as sold or unsold
-6. **Team Status**: Monitor budgets and player counts
+1. **Current Player Display**: See player details, role, base price, and player image
+2. **Enhanced Bidding**:
+   - Select team and enter custom bid amount
+   - Use quick bid buttons for faster bidding
+   - One-click BID button for minimum bid
+3. **Real-time Updates**: View highest bid and bidding team with live notifications
+4. **Timer**: Configurable countdown for each player (optional)
+5. **Quick Actions**:
+   - Mark players as sold or unsold
+   - Undo last bid if needed
+   - Manual end auction with confirmation
+6. **Team Status**: Monitor budgets, player counts, and eligibility
+7. **Live Sharing**: Generate shareable links for real-time viewing
+8. **Privacy Controls**: Toggle price visibility on/off
 
 ### Step 5: Results Dashboard
-1. **Team Squads**: View complete team compositions
-2. **Player Results**: See all sold/unsold players with prices
-3. **Statistics**: Analyze auction trends and highlights
-4. **Export**: Download detailed results in Excel format
+1. **Team Squads**: View complete team compositions with player images
+2. **Player Results**: See all sold/unsold players with prices and images
+3. **Statistics**: Analyze auction trends, role-wise data, and highlights
+4. **Privacy Controls**: Toggle price visibility for presentations
+5. **Export**: Download detailed results in Excel format
+6. **Visual Enhancements**: Player images, better formatting, and compact layouts
+
+### Step 6: Live Auction Sharing
+1. **Generate Link**: Create a unique shareable link for your auction
+2. **Real-time Viewing**: Multiple viewers can watch the auction live
+3. **Live Updates**: Automatic synchronization of bids, player changes, and results
+4. **Viewer Management**: See how many people are watching
+5. **Connection Status**: Monitor Firebase connection and viewer status
+6. **Completion Indicator**: Clear display when auction is finished
+7. **Privacy Options**: Hide/show prices for viewers
 
 ## 📊 Excel File Format
 
@@ -125,6 +162,7 @@ Your Excel file must contain these columns:
 | Role | ✅ Yes | Player position | "Batsman" |
 | Base Price | ❌ No | Starting price in rupees | 20000000 |
 | Rating | ❌ No | Player rating (0-100) | 95 |
+| Image URL | ❌ No | URL to player's image | "https://example.com/virat.jpg" |
 
 ### Valid Roles
 - Batsman
@@ -132,25 +170,48 @@ Your Excel file must contain these columns:
 - All-Rounder
 - Wicket-Keeper
 
+### Image Guidelines
+- **Supported Formats**: JPG, PNG, WebP, GIF
+- **Recommended Size**: 200x200px or larger
+- **Fallback**: Placeholder image shown if URL is invalid or missing
+- **Caching**: Images are cached for better performance
+
 ## 🎮 Auction Rules
 
-1. **Bidding**: Teams bid in increments of ₹5 Lakh minimum
-2. **Timer**: 30 seconds per player (configurable)
-3. **Budget Constraints**: Teams cannot exceed their budget
+1. **Bidding**:
+   - Configurable bid increments (default: minimum bid amount)
+   - Quick bid options for faster bidding
+   - One-click BID button for minimum bid
+   - Custom bid amounts supported
+2. **Timer**: Optional countdown per player (configurable, can be disabled)
+3. **Budget Constraints**:
+   - Teams cannot exceed their remaining budget
+   - Intelligent validation prevents invalid bids
+   - Support for minimum bid amounts as low as ₹1
 4. **Player Limits**: Teams cannot exceed maximum player count
-5. **Passing**: Teams can pass if they don't want to bid
-6. **Auto-completion**: Players auto-sold to highest bidder when timer expires
+5. **Squad Management**:
+   - Teams marked as "Squad Full" when at capacity
+   - "Insufficient Budget" shown when teams can't afford minimum bid
+6. **Passing**: Teams can pass if they don't want to bid
+7. **Unsold Players**: Randomized when they return to auction pool
+8. **Manual Controls**:
+   - Undo last bid functionality
+   - Manual end auction with confirmation
+   - Force auction completion when all teams are full
 
 ## 🛠️ Technical Stack
 
 - **Frontend**: React 18 with TypeScript
 - **Styling**: Tailwind CSS
 - **State Management**: Zustand
+- **Real-time Database**: Firebase Firestore
 - **Form Handling**: React Hook Form
 - **File Processing**: xlsx library
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 - **Validation**: Zod
+- **Image Handling**: Built-in caching and placeholder system
+- **Routing**: React Router DOM
 
 ## 📁 Project Structure
 
@@ -161,9 +222,18 @@ src/
 │   ├── PlayerInventory.tsx
 │   ├── TeamSetup.tsx
 │   ├── AuctionRoom.tsx
-│   └── Dashboard.tsx
+│   ├── Dashboard.tsx
+│   ├── LiveAuctionViewer.tsx    # Real-time auction viewer
+│   ├── TeamCard.tsx             # Enhanced team display
+│   ├── PlayerImage.tsx          # Player image component
+│   ├── ToastContainer.tsx       # Notification system
+│   └── CustomModal.tsx          # Modal dialogs
+├── services/           # External services
+│   └── auctionSharingService.ts # Firebase integration
 ├── store/              # State management
 │   └── auctionStore.ts
+├── hooks/              # Custom React hooks
+│   └── useToast.ts
 ├── types/              # TypeScript definitions
 │   └── index.ts
 ├── utils/              # Utility functions
@@ -175,41 +245,74 @@ src/
 ## 🔧 Configuration
 
 ### Auction Settings
-- **Bid Increment**: ₹5 Lakh (configurable)
-- **Auction Timer**: 30 seconds (configurable)
-- **Default Budget**: ₹100 Crores per team
+- **Bid Increment**: Configurable (default: minimum bid amount)
+- **Auction Timer**: Optional, configurable countdown per player
+- **Default Budget**: ₹100 Crores per team (with quick budget options)
+- **Minimum Bid**: Configurable, supports amounts as low as ₹1
+- **Quick Budget Options**: 1000, 5000, 10000, 50000, 100000, 1000000
 
 ### Constraints
 - Minimum 2 teams, maximum 16 teams
-- Minimum 5 players per team, maximum 25
-- Budget validation for all bids
-- Player limit enforcement
+- Minimum 5 players per team, maximum 25 (no upper limit restriction)
+- Budget validation for all bids with intelligent checking
+- Player limit enforcement with "Squad Full" indicators
+- Automatic minimum bid scaling based on budget selection
+
+### Firebase Configuration (for Live Sharing)
+- **Firestore Database**: Real-time auction data synchronization
+- **Connection Monitoring**: Automatic reconnection handling
+- **Viewer Management**: Track multiple simultaneous viewers
+- **Data Security**: Auction-specific access controls
 
 ## 📈 Features in Detail
 
 ### Real-time Auction
-- Live bidding with instant updates
-- Visual timer with countdown
-- Team eligibility checking
-- Automatic bid validation
+- Live bidding with instant updates and notifications
+- Optional visual timer with countdown
+- Enhanced team eligibility checking with clear status indicators
+- Automatic bid validation with intelligent constraints
+- Quick bid buttons and one-click bidding
+- Undo functionality for bid corrections
+- Manual auction ending with confirmation dialogs
+
+### Live Auction Sharing
+- Firebase-powered real-time synchronization
+- Unique shareable links for each auction
+- Multiple simultaneous viewers support
+- Live connection status monitoring
+- Automatic viewer count tracking
+- Real-time bid updates and player transitions
+- Auction completion notifications
 
 ### Data Management
-- Excel file parsing and validation
-- Duplicate player detection
-- Role-based categorization
-- Price formatting and calculations
+- Excel file parsing and validation with enhanced error handling
+- Player image URL support with automatic caching
+- Duplicate player detection and role validation
+- Role-based categorization with visual icons
+- Advanced price formatting with shortened display (e.g., "31cr")
+- Unsold player randomization for fair re-auctioning
+
+### Enhanced User Experience
+- Player images throughout the application
+- Compact and clean team card designs
+- Responsive layouts optimized for all devices
+- Toast notifications for important events
+- Custom modal dialogs for better UX
+- Price visibility toggle for privacy/presentation modes
+- Improved navigation and visual feedback
 
 ### Analytics
-- Team-wise spending analysis
-- Role-wise player distribution
-- Most expensive player tracking
-- Average price calculations
+- Team-wise spending analysis with visual indicators
+- Role-wise player distribution and statistics
+- Most expensive player tracking with highlights
+- Average price calculations and comparisons
+- Comprehensive auction statistics dashboard
 
 ### Export Capabilities
-- Team composition sheets
-- Player results summary
-- Detailed statistics
-- Multi-sheet Excel export
+- Team composition sheets with player images
+- Player results summary with detailed pricing
+- Comprehensive statistics and analytics
+- Multi-sheet Excel export with enhanced formatting
 
 ## 🤝 Contributing
 
@@ -223,14 +326,101 @@ src/
 
 This project is licensed under the MIT License.
 
+## 🔗 Live Auction Sharing Setup
+
+### Firebase Configuration
+To enable live auction sharing, you'll need to set up Firebase:
+
+1. **Create Firebase Project**:
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project
+   - Enable Firestore Database
+
+2. **Configure Environment Variables**:
+   Create a `.env` file in your project root:
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   ```
+
+3. **Firestore Security Rules**:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /auctions/{auctionId} {
+         allow read, write: if true; // Configure based on your security needs
+       }
+       match /viewers/{viewerId} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```
+
+### Using Live Sharing
+1. **Start Auction**: Begin your auction normally
+2. **Generate Link**: Click "Share Live Auction" to create a unique link
+3. **Share**: Send the link to viewers who want to watch in real-time
+4. **Monitor**: See viewer count and connection status in real-time
+
+## 🎨 Customization Options
+
+### Team Colors and Branding
+- Customize team colors in the team setup phase
+- Upload team logos (future enhancement)
+- Modify color schemes in the Tailwind configuration
+
+### Auction Behavior
+- Configure bid increments in tournament setup
+- Adjust timer settings (or disable completely)
+- Set custom minimum bid amounts
+- Choose quick budget options
+
+### Display Preferences
+- Toggle price visibility for different scenarios
+- Customize currency formatting
+- Adjust player image sizes and layouts
+- Configure notification preferences
+
 ## 🆘 Support
 
 For issues or questions:
-1. Check the console for error messages
-2. Ensure Excel file format is correct
-3. Verify all required fields are filled
-4. Check browser compatibility (modern browsers recommended)
+1. **Common Issues**:
+   - Check the browser console for error messages
+   - Ensure Excel file format matches the required structure
+   - Verify all required fields are filled correctly
+   - Check browser compatibility (modern browsers recommended)
+
+2. **Live Sharing Issues**:
+   - Verify Firebase configuration is correct
+   - Check internet connection for real-time features
+   - Ensure Firestore security rules allow access
+   - Monitor Firebase console for connection issues
+
+3. **Performance Tips**:
+   - Use optimized player images (recommended: 200x200px)
+   - Limit concurrent viewers for better performance
+   - Clear browser cache if experiencing issues
+   - Use modern browsers for best experience
+
+## 🔄 Recent Updates
+
+### Version 2.0 Features
+- ✅ Live auction sharing with Firebase
+- ✅ Player image support with caching
+- ✅ Enhanced bidding with quick options
+- ✅ Price visibility toggle
+- ✅ Improved team card designs
+- ✅ Manual auction ending
+- ✅ Better mobile responsiveness
+- ✅ Toast notifications
+- ✅ Undo bid functionality
 
 ---
 
-**Built with ❤️ using React, TypeScript, and Tailwind CSS**
+**Built with ❤️ using React, TypeScript, Tailwind CSS, and Firebase**
