@@ -52,6 +52,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const [isShuffling, setIsShuffling] = useState(false);
   const [shufflePlayer, setShufflePlayer] = useState<any>(null);
   const [shuffleInterval, setShuffleInterval] = useState<NodeJS.Timeout | null>(null);
+  const [shuffleCounter, setShuffleCounter] = useState(0);
 
   // Toast notifications
   const { toasts, removeToast, success, warning } = useToast();
@@ -277,6 +278,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     const interval = setInterval(() => {
       const randomPlayer = remainingPlayers[Math.floor(Math.random() * remainingPlayers.length)];
       setShufflePlayer(randomPlayer);
+      setShuffleCounter(prev => prev + 1); // Increment counter to force PlayerImage re-render
     }, 100); // Change every 100ms for fast shuffling effect
 
     setShuffleInterval(interval);
@@ -376,8 +378,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               <div className="flex-shrink-0">
                 <div className={`transition-all duration-200 ${isShuffling ? 'animate-pulse scale-105' : ''}`}>
                   <PlayerImage
-                    imageUrl={(isShuffling && shufflePlayer ? shufflePlayer.imageUrl : currentPlayer?.imageUrl)}
-                    playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name)}
+                    key={isShuffling && shufflePlayer ? `shuffle-${shufflePlayer.id}-${shuffleCounter}` : `current-${currentPlayer?.id}`}
+                    imageUrl={isShuffling ? undefined : currentPlayer?.imageUrl}
+                    playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
                     size="2xl"
                     className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
                   />
@@ -464,66 +467,80 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
       {/* Current Bid Status - Two Column Layout */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
-        {auctionState.highestBid && highestBiddingTeam ? (
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            {/* Left Column: Current Bidder */}
-            <div className="flex flex-col justify-center">
-              <p className="text-sm text-blue-600 font-medium mb-3 text-center">CURRENT HIGHEST BIDDER</p>
-              <div className="flex items-center justify-center mb-2">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4 shadow-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${highestBiddingTeam.primaryColor}, ${highestBiddingTeam.secondaryColor})`,
-                  }}
-                >
-                  {highestBiddingTeam.logo}
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-gray-900">{highestBiddingTeam.name}</div>
-                  <div className="text-sm text-gray-600">
-                    Budget: {formatCurrency(highestBiddingTeam.remainingBudget)} remaining
+        <div className="grid grid-cols-2 gap-6 mb-4">
+          {/* Left Column: Bidder Info */}
+          <div className="flex flex-col justify-center min-h-[120px]">
+            <p className="text-sm font-medium mb-3 text-center">
+              {auctionState.highestBid && highestBiddingTeam ? (
+                <span className="text-blue-600">CURRENT HIGHEST BIDDER</span>
+              ) : (
+                <span className="text-gray-600">STARTING PRICE</span>
+              )}
+            </p>
+
+            {auctionState.highestBid && highestBiddingTeam ? (
+              <>
+                <div className="flex items-center justify-center mb-2">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4 shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${highestBiddingTeam.primaryColor}, ${highestBiddingTeam.secondaryColor})`,
+                    }}
+                  >
+                    {highestBiddingTeam.logo}
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-gray-900">{highestBiddingTeam.name}</div>
+                    <div className="text-sm text-gray-600">
+                      Budget: {formatCurrency(highestBiddingTeam.remainingBudget)} remaining
+                    </div>
                   </div>
                 </div>
+                <div className="text-xs text-gray-600 text-center">
+                  Bid placed {new Date(auctionState.highestBid.timestamp).toLocaleTimeString()}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center flex-1">
+                <div className="text-lg text-gray-600 text-center">No bids placed yet</div>
               </div>
-              <div className="text-xs text-gray-600 text-center">
-                Bid placed {new Date(auctionState.highestBid.timestamp).toLocaleTimeString()}
-              </div>
-            </div>
-
-            {/* Right Column: Bid Amount */}
-            <div className="text-center">
-              <p className="text-sm text-blue-600 font-medium mb-3">CURRENT BID</p>
-              <div className="text-5xl font-bold text-blue-600 mb-2">
-                {formatCurrency(auctionState.highestBid.amount)}
-              </div>
-            </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            {/* Left Column: Starting Info */}
-            <div className="flex flex-col justify-center">
-              <p className="text-sm text-gray-600 font-medium mb-3 text-center">STARTING PRICE</p>
-              <div className="text-lg text-gray-600 text-center">No bids placed yet</div>
-            </div>
 
-            {/* Right Column: Starting Price */}
-            <div className="text-center">
-              <p className={`text-sm font-medium mb-3 transition-all duration-200 ${
-                isShuffling ? 'text-yellow-600' : 'text-gray-600'
-              }`}>
-                {isShuffling ? 'SHUFFLING...' : 'BASE PRICE'}
-              </p>
-              <div className={`text-5xl font-bold mb-2 transition-all duration-200 ${
-                isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
-              }`}>
-                {formatCurrency(
+          {/* Right Column: Price */}
+          <div className="text-center min-h-[120px] flex flex-col justify-center">
+            <p className={`text-sm font-medium mb-3 transition-all duration-200 ${
+              auctionState.highestBid && highestBiddingTeam
+                ? 'text-blue-600'
+                : isShuffling
+                  ? 'text-yellow-600'
+                  : 'text-gray-600'
+            }`}>
+              {auctionState.highestBid && highestBiddingTeam
+                ? 'CURRENT BID'
+                : isShuffling
+                  ? 'SHUFFLING...'
+                  : 'BASE PRICE'
+              }
+            </p>
+            <div className={`text-5xl font-bold mb-2 transition-all duration-200 ${
+              auctionState.highestBid && highestBiddingTeam
+                ? 'text-blue-600'
+                : isShuffling
+                  ? 'text-yellow-600 animate-pulse'
+                  : 'text-gray-900'
+            }`}>
+              {auctionState.highestBid && highestBiddingTeam ? (
+                formatCurrency(auctionState.highestBid.amount)
+              ) : (
+                formatCurrency(
                   (isShuffling && shufflePlayer ? shufflePlayer.basePrice : currentPlayer?.basePrice) ||
                   tournament?.settings.minimumBid || 100
-                )}
-              </div>
+                )
+              )}
             </div>
           </div>
-        )}
+        </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-blue-200">
           <div className="text-center">

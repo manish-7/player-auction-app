@@ -50,19 +50,22 @@ const LiveAuctionViewer: React.FC = () => {
 
             // Player moved to next (either sold or unsold)
             if (currentPlayerIndex > prevPlayerIndex) {
-              const soldPlayer = prevData.tournament.players[prevPlayerIndex];
-              if (soldPlayer) {
-                // Check if player was sold by looking at highest bid
-                if (prevData.auctionState.highestBid) {
-                  const soldTeam = data.tournament.teams?.find(t => t.id === prevData.auctionState.highestBid?.teamId);
+              const prevPlayer = prevData.tournament.players[prevPlayerIndex];
+              if (prevPlayer) {
+                // Check if player was sold by looking at the current player state
+                const currentPlayerState = data.tournament.players[prevPlayerIndex];
+                if (currentPlayerState && currentPlayerState.soldPrice && currentPlayerState.teamId) {
+                  // Player was sold - find the team that bought them
+                  const soldTeam = data.tournament.teams?.find(t => t.id === currentPlayerState.teamId);
                   success(
-                    `${soldPlayer.name} SOLD!`,
-                    `Bought by ${soldTeam?.name || 'Unknown Team'} for ${formatCurrency(prevData.auctionState.highestBid.amount)}`,
+                    `${prevPlayer.name} SOLD!`,
+                    `Bought by ${soldTeam?.name || 'Unknown Team'} for ${formatCurrency(currentPlayerState.soldPrice)}`,
                     6000
                   );
-                } else {
+                } else if (currentPlayerState && currentPlayerState.isUnsold) {
+                  // Player was marked as unsold
                   warning(
-                    `${soldPlayer.name} UNSOLD`,
+                    `${prevPlayer.name} UNSOLD`,
                     'No bids received - player goes back to pool',
                     4000
                   );
