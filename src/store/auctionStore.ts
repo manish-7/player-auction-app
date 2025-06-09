@@ -59,6 +59,12 @@ interface AuctionStore {
 
   unsoldPlayer: () => void;
 
+  // New functions for delayed player advancement
+  markPlayerSold: () => void;
+  markPlayerUnsold: () => void;
+  advanceToNextPlayer: () => void;
+  setPreventAutoAdvance: (prevent: boolean) => void;
+
   nextPlayer: () => void;
 
   resetAuction: () => void;
@@ -304,6 +310,102 @@ export const useAuctionStore = create<AuctionStore>()(
         get().nextPlayer();
       },
 
+      // New function: Mark player as sold without advancing
+      markPlayerSold: () => {
+        const { tournament, auctionState } = get();
+        const currentPlayer = get().getCurrentPlayer();
+        if (!tournament || !auctionState.highestBid || !currentPlayer) return;
+
+        const winningTeam = tournament.teams.find(t => t.id === auctionState.highestBid!.teamId);
+        if (!winningTeam) return;
+
+        const soldPlayer = {
+          ...currentPlayer,
+          soldPrice: auctionState.highestBid.amount,
+          teamId: winningTeam.id,
+        };
+
+        set((state) => {
+          if (!state.tournament) return state;
+
+          const updatedPlayers = state.tournament.players.map(player =>
+            player.id === currentPlayer.id ? soldPlayer : player
+          );
+
+          const updatedTeams = state.tournament.teams.map(team => {
+            if (team.id === winningTeam.id) {
+              return {
+                ...team,
+                players: [...team.players, soldPlayer],
+                remainingBudget: team.remainingBudget - auctionState.highestBid!.amount,
+              };
+            }
+            return team;
+          });
+
+          return {
+            ...state,
+            tournament: {
+              ...state.tournament,
+              players: updatedPlayers,
+              teams: updatedTeams,
+            },
+            auctionState: {
+              ...state.auctionState,
+              highestBid: undefined,
+              currentBids: [],
+              passedTeams: [],
+            },
+          };
+        });
+      },
+
+      // New function: Mark player as unsold without advancing
+      markPlayerUnsold: () => {
+        const { tournament } = get();
+        if (!tournament || !tournament.players[tournament.currentPlayerIndex]) return;
+
+        const currentPlayer = tournament.players[tournament.currentPlayerIndex];
+        const unsoldPlayer = { ...currentPlayer, isUnsold: true };
+
+        set((state) => {
+          if (!state.tournament) return state;
+
+          const updatedPlayers = state.tournament.players.map(player =>
+            player.id === currentPlayer.id ? unsoldPlayer : player
+          );
+
+          return {
+            ...state,
+            tournament: {
+              ...state.tournament,
+              players: updatedPlayers,
+            },
+            auctionState: {
+              ...state.auctionState,
+              highestBid: undefined,
+              currentBids: [],
+              passedTeams: [],
+            },
+          };
+        });
+      },
+
+      // New function: Advance to next player (for use after shuffle animation)
+      advanceToNextPlayer: () => {
+        get().nextPlayer();
+      },
+
+      // New function: Control auto-advance behavior
+      setPreventAutoAdvance: (prevent: boolean) => {
+        set((state) => ({
+          auctionState: {
+            ...state.auctionState,
+            preventAutoAdvance: prevent,
+          },
+        }));
+      },
+
       unsoldPlayer: () => {
         const { tournament } = get();
         if (!tournament || !tournament.players[tournament.currentPlayerIndex]) return;
@@ -338,7 +440,27 @@ export const useAuctionStore = create<AuctionStore>()(
         const { tournament } = get();
         if (!tournament) return;
 
-        if (tournament.currentPlayerIndex >= tournament.players.length) {
+        // First, advance the current player index to the next available player
+        let nextIndex = tournament.currentPlayerIndex + 1;
+
+        // Find the next player that hasn't been sold or marked unsold
+        while (nextIndex < tournament.players.length) {
+          const player = tournament.players[nextIndex];
+          if (!player.soldPrice && !player.isUnsold) {
+            break; // Found next available player
+          }
+          nextIndex++;
+        }
+
+        // Update the current player index
+        set((state) => ({
+          tournament: state.tournament ? {
+            ...state.tournament,
+            currentPlayerIndex: nextIndex,
+          } : null,
+        }));
+
+        if (nextIndex >= tournament.players.length) {
           // Check if we should bring back unsold players
           if (tournament.settings.enableUnsoldPlayerReturn) {
             const unsoldPlayers = tournament.players.filter(p => p.isUnsold && !p.soldPrice);
@@ -484,8 +606,17 @@ export const useAuctionStore = create<AuctionStore>()(
       },
 
       getCurrentPlayer: () => {
-        const { tournament } = get();
+        const { tournament, auctionState } = get();
         if (!tournament || tournament.currentPlayerIndex >= tournament.players.length) {
+          return null;
+        }
+
+        // If auto-advance is prevented (during shuffle), just return the player at current index
+        if (auctionState.preventAutoAdvance) {
+          const player = tournament.players[tournament.currentPlayerIndex];
+          if (player && !player.soldPrice && !player.isUnsold) {
+            return player;
+          }
           return null;
         }
 

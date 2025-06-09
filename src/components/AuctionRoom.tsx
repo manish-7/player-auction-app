@@ -23,6 +23,10 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     passTeam,
     soldPlayer,
     unsoldPlayer,
+    markPlayerSold,
+    markPlayerUnsold,
+    advanceToNextPlayer,
+    setPreventAutoAdvance,
 
     getCurrentPlayer,
     getEligibleTeams,
@@ -45,6 +49,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const [showShareDemo, setShowShareDemo] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [shufflePlayer, setShufflePlayer] = useState<any>(null);
+  const [shuffleInterval, setShuffleInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Toast notifications
   const { toasts, removeToast, success, warning } = useToast();
@@ -93,14 +100,30 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               `Time expired - Bought by ${winningTeam?.name || 'Unknown Team'} for ${formatCurrency(auctionState.highestBid.amount)}`,
               5000
             );
-            soldPlayer();
+            // Immediately set shuffling to prevent "Auction Completed" flash
+            setIsShuffling(true);
+            // Prevent getCurrentPlayer from auto-advancing
+            setPreventAutoAdvance(true);
+            markPlayerSold();
+            // Start shuffling animation for next player
+            setTimeout(() => {
+              startPlayerShuffle();
+            }, 500);
           } else {
             warning(
               `${currentPlayer?.name} UNSOLD`,
               'Time expired - No bids received',
               4000
             );
-            unsoldPlayer();
+            // Immediately set shuffling to prevent "Auction Completed" flash
+            setIsShuffling(true);
+            // Prevent getCurrentPlayer from auto-advancing
+            setPreventAutoAdvance(true);
+            markPlayerUnsold();
+            // Start shuffling animation for next player
+            setTimeout(() => {
+              startPlayerShuffle();
+            }, 500);
           }
           return tournament.settings.timerDuration;
         }
@@ -110,6 +133,15 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
     return () => clearInterval(interval);
   }, [auctionState.isActive, currentPlayer, auctionState.highestBid, soldPlayer, unsoldPlayer, tournament?.settings.timerDuration, tournament?.settings.enableTimer]);
+
+  // Cleanup shuffle interval on unmount
+  useEffect(() => {
+    return () => {
+      if (shuffleInterval) {
+        clearInterval(shuffleInterval);
+      }
+    };
+  }, [shuffleInterval]);
 
   const handlePlaceBid = () => {
     if (selectedTeam && bidAmount > 0) {
@@ -146,8 +178,20 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
         5000
       );
     }
-    soldPlayer();
-    setTimer(tournament?.settings.timerDuration || 30);
+
+    // Immediately set shuffling to prevent "Auction Completed" flash
+    setIsShuffling(true);
+
+    // Prevent getCurrentPlayer from auto-advancing
+    setPreventAutoAdvance(true);
+
+    // Mark player as sold but don't advance yet
+    markPlayerSold();
+
+    // Start shuffling animation which will advance to next player when complete
+    setTimeout(() => {
+      startPlayerShuffle();
+    }, 500); // Small delay to let the sold action complete
   };
 
   const handleUnsoldPlayer = () => {
@@ -158,8 +202,20 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
         4000
       );
     }
-    unsoldPlayer();
-    setTimer(tournament?.settings.timerDuration || 30);
+
+    // Immediately set shuffling to prevent "Auction Completed" flash
+    setIsShuffling(true);
+
+    // Prevent getCurrentPlayer from auto-advancing
+    setPreventAutoAdvance(true);
+
+    // Mark player as unsold but don't advance yet
+    markPlayerUnsold();
+
+    // Start shuffling animation which will advance to next player when complete
+    setTimeout(() => {
+      startPlayerShuffle();
+    }, 500); // Small delay to let the unsold action complete
   };
 
   const handleEndAuction = () => {
@@ -202,7 +258,48 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     }
   };
 
-  if (!tournament || !currentPlayer) {
+  const startPlayerShuffle = () => {
+    if (!tournament) return;
+
+    // Get all remaining players (not sold, not unsold) - these are the candidates for next player
+    const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold);
+    if (remainingPlayers.length === 0) {
+      // No more players to shuffle, just advance
+      setIsShuffling(false);
+      setPreventAutoAdvance(false);
+      advanceToNextPlayer();
+      return;
+    }
+
+    // isShuffling is already set to true by the caller
+
+    // Create shuffling effect by rapidly changing the displayed player
+    const interval = setInterval(() => {
+      const randomPlayer = remainingPlayers[Math.floor(Math.random() * remainingPlayers.length)];
+      setShufflePlayer(randomPlayer);
+    }, 100); // Change every 100ms for fast shuffling effect
+
+    setShuffleInterval(interval);
+
+    // Stop shuffling after 2 seconds and advance to the actual next player
+    setTimeout(() => {
+      clearInterval(interval);
+      setShuffleInterval(null);
+      setIsShuffling(false);
+      setShufflePlayer(null);
+
+      // Re-enable auto-advance
+      setPreventAutoAdvance(false);
+
+      // Now advance to the next player
+      advanceToNextPlayer();
+
+      setTimer(tournament?.settings.timerDuration || 30);
+    }, 2000);
+  };
+
+  // Don't show auction completed during shuffling, even if currentPlayer is null
+  if (!tournament || (!currentPlayer && !isShuffling)) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="card text-center">
@@ -226,7 +323,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
   const minBid = auctionState.highestBid?.amount
     ? auctionState.highestBid.amount + Number(settings.bidIncrement)
-    : currentPlayer.basePrice || tournament?.settings.minimumBid || 100;
+    : currentPlayer?.basePrice || tournament?.settings.minimumBid || 100;
 
   const highestBiddingTeam = auctionState.highestBid 
     ? tournament.teams.find(t => t.id === auctionState.highestBid!.teamId)
@@ -277,28 +374,43 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
             <div className="flex items-center justify-center space-x-6">
               {/* Player Image - Fixed Size */}
               <div className="flex-shrink-0">
-                <PlayerImage
-                  imageUrl={currentPlayer.imageUrl}
-                  playerName={currentPlayer.name}
-                  size="2xl"
-                  className="shadow-lg border-4 border-white"
-                />
+                <div className={`transition-all duration-200 ${isShuffling ? 'animate-pulse scale-105' : ''}`}>
+                  <PlayerImage
+                    imageUrl={(isShuffling && shufflePlayer ? shufflePlayer.imageUrl : currentPlayer?.imageUrl)}
+                    playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name)}
+                    size="2xl"
+                    className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
+                  />
+                </div>
               </div>
 
               {/* Player Info - Compact Layout */}
               <div className="text-center w-80">
+                {/* Shuffling Indicator */}
+                {isShuffling && (
+                  <div className="mb-2">
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium animate-bounce">
+                      🎲 Selecting Next Player...
+                    </div>
+                  </div>
+                )}
+
                 {/* Player Name - Single Line */}
                 <div className="flex items-center justify-center mb-4">
-                  <h1 className="text-4xl font-bold text-gray-900 leading-none whitespace-nowrap overflow-hidden text-ellipsis">
-                    {currentPlayer.name}
+                  <h1 className={`text-4xl font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 ${
+                    isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
+                  }`}>
+                    {isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name}
                   </h1>
                 </div>
 
                 {/* Player Role - Fixed Height */}
                 <div className="h-8 flex items-center justify-center">
-                  {currentPlayer.role ? (
-                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                      {currentPlayer.role}
+                  {(isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role) ? (
+                    <span className={`inline-block text-sm font-medium px-3 py-1 rounded-full transition-all duration-200 ${
+                      isShuffling ? 'bg-yellow-100 text-yellow-800 animate-pulse' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role}
                     </span>
                   ) : (
                     <span className="inline-block opacity-0 text-sm font-medium px-3 py-1">
@@ -327,18 +439,24 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           {auctionState.highestBid ? (
             <button
               onClick={handleSoldPlayer}
-              className="btn-success flex items-center"
+              disabled={isShuffling}
+              className={`btn-success flex items-center transition-all duration-300 ${
+                isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               <Trophy className="w-4 h-4 mr-2" />
-              Sold
+              {isShuffling ? 'Shuffling...' : 'Sold'}
             </button>
           ) : (
             <button
               onClick={handleUnsoldPlayer}
-              className="btn-danger flex items-center"
+              disabled={isShuffling}
+              className={`btn-danger flex items-center transition-all duration-300 ${
+                isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               <SkipForward className="w-4 h-4 mr-2" />
-              Unsold
+              {isShuffling ? 'Shuffling...' : 'Unsold'}
             </button>
           )}
         </div>
@@ -390,9 +508,18 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
             {/* Right Column: Starting Price */}
             <div className="text-center">
-              <p className="text-sm text-gray-600 font-medium mb-3">BASE PRICE</p>
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {formatCurrency(currentPlayer.basePrice || tournament?.settings.minimumBid || 100)}
+              <p className={`text-sm font-medium mb-3 transition-all duration-200 ${
+                isShuffling ? 'text-yellow-600' : 'text-gray-600'
+              }`}>
+                {isShuffling ? 'SHUFFLING...' : 'BASE PRICE'}
+              </p>
+              <div className={`text-5xl font-bold mb-2 transition-all duration-200 ${
+                isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
+              }`}>
+                {formatCurrency(
+                  (isShuffling && shufflePlayer ? shufflePlayer.basePrice : currentPlayer?.basePrice) ||
+                  tournament?.settings.minimumBid || 100
+                )}
               </div>
             </div>
           </div>
@@ -423,7 +550,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       </div>
 
       {/* Bidding Section - Prominent and Compact */}
-      <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-4">
+      <div className={`bg-white rounded-xl shadow-lg border-2 border-blue-100 p-4 transition-all duration-300 ${
+        isShuffling ? 'opacity-50 pointer-events-none' : ''
+      }`}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900">Place Your Bid</h2>
           <div className="flex items-center space-x-4">

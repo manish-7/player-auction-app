@@ -69,6 +69,7 @@ export interface AuctionState {
   passedTeams: string[];
   timer: number;
   isActive: boolean;
+  preventAutoAdvance?: boolean; // Flag to prevent getCurrentPlayer from auto-advancing
 }
 
 export type PlayerRole = 
