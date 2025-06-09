@@ -184,7 +184,13 @@ const TeamCard: React.FC<TeamCardProps> = ({
 
             <div className="grid gap-1.5">
               {(team.players || [])
-                .sort((a, b) => (b.soldPrice || 0) - (a.soldPrice || 0)) // Sort by price descending
+                .sort((a, b) => {
+                  // First sort by captain status (captains first)
+                  if (a.isCaptain && !b.isCaptain) return -1;
+                  if (!a.isCaptain && b.isCaptain) return 1;
+                  // Then sort by price descending
+                  return (b.soldPrice || 0) - (a.soldPrice || 0);
+                })
                 .map((player) => (
                   <div
                     key={player.id}
@@ -204,6 +210,9 @@ const TeamCard: React.FC<TeamCardProps> = ({
                           <span className="text-sm">{getRoleIcon(player.role)}</span>
                           <span className="text-sm font-medium text-gray-900 truncate">
                             {player.name}
+                            {player.isCaptain && (
+                              <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                            )}
                           </span>
                           {player.rating && player.rating >= 85 && (
                             <Star className="w-3 h-3 text-yellow-500 flex-shrink-0" />

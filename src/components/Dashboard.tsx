@@ -253,7 +253,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {team.players.map((player) => (
+                          {team.players
+                            .sort((a, b) => {
+                              // First sort by captain status (captains first)
+                              if (a.isCaptain && !b.isCaptain) return -1;
+                              if (!a.isCaptain && b.isCaptain) return 1;
+                              // Then sort by price descending
+                              return (b.soldPrice || 0) - (a.soldPrice || 0);
+                            })
+                            .map((player) => (
                             <tr key={player.id}>
                               <td className="px-4 py-2">
                                 <div className="flex items-center space-x-3">
@@ -263,7 +271,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                                     size="sm"
                                     className="flex-shrink-0"
                                   />
-                                  <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {player.name}
+                                    {player.isCaptain && (
+                                      <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                                    )}
+                                  </span>
                                 </div>
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-500">{player.role || 'N/A'}</td>
@@ -301,7 +314,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {tournament.players
-                    .sort((a, b) => (b.soldPrice || 0) - (a.soldPrice || 0))
+                    .sort((a, b) => {
+                      // First sort by captain status (captains first)
+                      if (a.isCaptain && !b.isCaptain) return -1;
+                      if (!a.isCaptain && b.isCaptain) return 1;
+                      // Then sort by price descending
+                      return (b.soldPrice || 0) - (a.soldPrice || 0);
+                    })
                     .map((player) => {
                       const team = player.teamId ? tournament.teams.find(t => t.id === player.teamId) : null;
                       return (
@@ -314,7 +333,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                                 size="sm"
                                 className="flex-shrink-0"
                               />
-                              <span className="text-sm font-medium text-gray-900">{player.name}</span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {player.name}
+                                {player.isCaptain && (
+                                  <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                                )}
+                              </span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">{player.role || 'N/A'}</td>
@@ -361,7 +385,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                   <h4 className="text-lg font-semibold text-blue-900 mb-4">Most Expensive Player</h4>
                   {mostExpensivePlayer ? (
                     <div>
-                      <p className="text-xl font-bold text-blue-900">{mostExpensivePlayer.name}</p>
+                      <p className="text-xl font-bold text-blue-900">
+                        {mostExpensivePlayer.name}
+                        {mostExpensivePlayer.isCaptain && (
+                          <span className="text-sm font-bold text-blue-600 ml-1">(C)</span>
+                        )}
+                      </p>
                       <p className="text-blue-700">{mostExpensivePlayer.role || 'N/A'}</p>
                       <p className="text-2xl font-bold text-blue-900 mt-2">
                         {showPrices ? formatCurrency(mostExpensivePlayer.soldPrice || 0) : '***'}

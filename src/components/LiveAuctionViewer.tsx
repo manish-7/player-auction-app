@@ -349,6 +349,9 @@ const LiveAuctionViewer: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <h2 className="text-xl font-semibold text-gray-900 truncate">
                           {currentPlayer?.name || 'Unknown Player'}
+                          {currentPlayer?.isCaptain && (
+                            <span className="text-sm font-bold text-blue-600 ml-1">(C)</span>
+                          )}
                         </h2>
                         {currentPlayer?.role && (
                           <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
@@ -439,6 +442,9 @@ const LiveAuctionViewer: React.FC = () => {
                       <div className="text-center">
                         <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
                           {currentPlayer?.name || 'Unknown Player'}
+                          {currentPlayer?.isCaptain && (
+                            <span className="text-lg font-bold text-blue-600 ml-1">(C)</span>
+                          )}
                         </h2>
                         {currentPlayer?.role && (
                           <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
@@ -562,7 +568,11 @@ const LiveAuctionViewer: React.FC = () => {
               {tournament.players
                 .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
                 .sort((a, b) => {
-                  // Sort upcoming players first, then unsold players at the end
+                  // First sort by captain status (captains first)
+                  if (a.isCaptain && !b.isCaptain) return -1;
+                  if (!a.isCaptain && b.isCaptain) return 1;
+
+                  // Then sort upcoming players first, then unsold players at the end
                   const aIsUnsold = a.isUnsold;
                   const bIsUnsold = b.isUnsold;
 
@@ -600,7 +610,12 @@ const LiveAuctionViewer: React.FC = () => {
                                 UNSOLD
                               </span>
                             )}
-                            <div className="font-medium text-gray-900 truncate">{player.name}</div>
+                            <div className="font-medium text-gray-900 truncate">
+                              {player.name}
+                              {player.isCaptain && (
+                                <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                              )}
+                            </div>
                           </div>
                           {player.role && (
                             <div className="text-xs text-gray-500">{player.role}</div>

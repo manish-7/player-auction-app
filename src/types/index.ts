@@ -8,6 +8,7 @@ export interface Player {
   isUnsold?: boolean;
   soldPrice?: number;
   teamId?: string;
+  isCaptain?: boolean;
 }
 
 export interface Team {
@@ -92,6 +93,7 @@ export interface ExcelPlayerData {
   'Role'?: string;
   'Rating'?: number;
   'Image URL'?: string;
+  'Captain'?: string;
 }
 
 export interface AuctionSettings {

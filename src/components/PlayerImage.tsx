@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User } from 'lucide-react';
+import { User, Crown } from 'lucide-react';
 import { imageCacheService } from '../services/imageCacheService';
 
 interface PlayerImageProps {
@@ -7,13 +7,15 @@ interface PlayerImageProps {
   playerName: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
+  isCaptain?: boolean;
 }
 
 const PlayerImage: React.FC<PlayerImageProps> = ({
   imageUrl,
   playerName,
   size = 'md',
-  className = ''
+  className = '',
+  isCaptain = false
 }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -33,6 +35,14 @@ const PlayerImage: React.FC<PlayerImageProps> = ({
     lg: 'w-8 h-8',
     xl: 'w-12 h-12',
     '2xl': 'w-16 h-16'
+  };
+
+  const captainIconSizes = {
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5',
+    xl: 'w-6 h-6',
+    '2xl': 'w-8 h-8'
   };
 
   // Check cache and load image
@@ -114,6 +124,13 @@ const PlayerImage: React.FC<PlayerImageProps> = ({
       {imageLoading && !imageError && imageUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+        </div>
+      )}
+
+      {/* Captain Crown Indicator */}
+      {isCaptain && (
+        <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1 border-2 border-white shadow-lg">
+          <Crown className={`${captainIconSizes[size]} text-yellow-800`} />
         </div>
       )}
     </div>

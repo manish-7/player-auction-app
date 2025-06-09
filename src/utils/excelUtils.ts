@@ -31,21 +31,23 @@ export const readExcelFile = (file: File): Promise<ExcelPlayerData[]> => {
   });
 };
 
-export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number = 100): {
+export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number = 100, numberOfTeams: number = 4): {
   isValid: boolean;
   errors: string[];
   validPlayers: Player[];
+  captains: Player[];
 } => {
   const errors: string[] = [];
   const validPlayers: Player[] = [];
+  const captains: Player[] = [];
   const playerNames = new Set<string>();
-  
+
   // Check if data is empty
   if (!data || data.length === 0) {
     errors.push('Excel file is empty or has no data');
-    return { isValid: false, errors, validPlayers };
+    return { isValid: false, errors, validPlayers, captains };
   }
-  
+
   // Check required columns
   const firstRow = data[0];
   const requiredColumns = ['Player Name'];
@@ -53,7 +55,7 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
 
   if (missingColumns.length > 0) {
     errors.push(`Missing required columns: ${missingColumns.join(', ')}`);
-    return { isValid: false, errors, validPlayers };
+    return { isValid: false, errors, validPlayers, captains };
   }
   
   // Validate each player
@@ -129,6 +131,15 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
       }
     }
 
+    // Check captain status (optional)
+    let isCaptain = false;
+    if (row['Captain'] !== undefined && row['Captain'] !== null) {
+      const captainValue = row['Captain']?.toString().trim().toLowerCase();
+      if (captainValue === 'yes' || captainValue === 'true' || captainValue === '1') {
+        isCaptain = true;
+      }
+    }
+
     // Create valid player
     const player: Player = {
       id: `player-${Date.now()}-${index}`,
@@ -137,27 +148,44 @@ export const validatePlayerData = (data: ExcelPlayerData[], minimumBid: number =
       role,
       rating,
       imageUrl,
+      isCaptain,
     };
-    
+
     validPlayers.push(player);
+
+    // Add to captains list if this player is a captain
+    if (isCaptain) {
+      captains.push(player);
+    }
   });
-  
+
+  // Validate captain count only if captains are provided
+  if (captains.length > 0 && captains.length !== numberOfTeams) {
+    if (captains.length < numberOfTeams) {
+      errors.push(`Only ${captains.length} captain(s) found, but ${numberOfTeams} teams require ${numberOfTeams} captains. Please mark exactly ${numberOfTeams} players as captains or remove all captain markings to proceed without captains.`);
+    } else {
+      errors.push(`Too many captains found (${captains.length}). Please mark exactly ${numberOfTeams} players as captains (one for each team) or remove all captain markings to proceed without captains.`);
+    }
+  }
+
   return {
     isValid: errors.length === 0,
     errors,
     validPlayers,
+    captains,
   };
 };
 
 export const generateSampleExcelFile = (minimumBid: number = 100): void => {
   const sampleData = [
-    // Star Players with all fields
+    // Star Players with all fields (including captains)
     {
       'Player Name': 'Virat Kohli',
       'Base Price': 200,
       'Role': 'Batsman',
       'Rating': 95,
       'Image URL': 'https://example.com/virat-kohli.jpg',
+      'Captain': 'yes',
     },
     {
       'Player Name': 'Jasprit Bumrah',
@@ -172,18 +200,21 @@ export const generateSampleExcelFile = (minimumBid: number = 100): void => {
       'Role': 'Wicket-Keeper',
       'Rating': 90,
       'Image URL': 'https://example.com/ms-dhoni.jpg',
+      'Captain': 'yes',
     },
     {
       'Player Name': 'Hardik Pandya',
       'Base Price': 180,
       'Role': 'All-Rounder',
       'Rating': 88,
+      'Captain': 'yes',
     },
     {
       'Player Name': 'Rohit Sharma',
       'Base Price': 220,
       'Role': 'Batsman',
       'Rating': 93,
+      'Captain': 'yes',
     },
     {
       'Player Name': 'Rashid Khan',
@@ -381,6 +412,12 @@ export const generateSampleExcelFile = (minimumBid: number = 100): void => {
       'Required': 'No',
       'Description': 'Direct link to player photo (optional)',
       'Example': 'https://example.com/player.jpg',
+    },
+    {
+      'Field': 'Captain',
+      'Required': 'No',
+      'Description': 'Mark as captain (exactly one per team required)',
+      'Example': 'yes',
     },
     {},
     {

@@ -34,7 +34,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
     defaultValues: {
       name: 'IPL Auction 2025',
       numberOfTeams: 4,
-      playersPerTeam: 6,
+      playersPerTeam: 7,
       teamBudget: 3000000000, // ₹300 crores default budget
       minimumBid: 10000000, // ₹1 crore minimum bid
       bidIncrement: 10000000, // ₹1 crore bid increment
@@ -200,7 +200,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                 {...register('teamBudget', {
                   required: 'Team budget is required',
                   min: { value: 100, message: 'Minimum budget is ₹100' },
-                  max: { value: 10000000000, message: 'Maximum budget is ₹1000 Crores' },
+                  max: { value: 3000000000, message: 'Maximum budget is ₹300 Crores' },
                 })}
                 className="input-field pr-24"
                 placeholder="Enter team budget"
@@ -228,24 +228,17 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
             <p className="text-sm text-gray-500 mb-3">
               Select a budget preset. Minimum bid will be automatically calculated.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
               {[
-                { label: '₹100 Cr', value: 1000000000 },
-                { label: '₹200 Cr', value: 2000000000 },
-                { label: '₹300 Cr', value: 3000000000 },
-                { label: '₹400 Cr', value: 4000000000 },
-                { label: '₹500 Cr', value: 5000000000 },
-                { label: '₹750 Cr', value: 7500000000 },
-                { label: '₹1000 Cr', value: 10000000000 },
-                { label: '₹1500 Cr', value: 15000000000 },
-                { label: '₹2000 Cr', value: 20000000000 },
-                { label: '₹3000 Cr', value: 30000000000 },
-                { label: '₹5000 Cr', value: 50000000000 },
-                { label: '₹10K Cr', value: 100000000000 },
-                { label: '₹50K Cr', value: 500000000000 },
-                { label: '₹1 L Cr', value: 1000000000000 },
-                { label: '₹10 L Cr', value: 10000000000000 },
-                { label: '₹100 L Cr', value: 100000000000000 },
+                { label: '₹100', value: 100 },
+                { label: '₹1000', value: 1000 },
+                { label: '₹10K', value: 10000 },
+                { label: '₹1L', value: 100000 },
+                { label: '₹10L', value: 1000000 },
+                { label: '₹1Cr', value: 10000000 },
+                { label: '₹10Cr', value: 100000000 },
+                { label: '₹100Cr', value: 1000000000 },
+                { label: '₹300Cr', value: 3000000000 },
               ].map((option) => (
                 <button
                   key={option.value}
@@ -459,7 +452,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
           💡 Tournament Setup Tips
         </h3>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Default format: 4 teams with 6 players each (customizable)</li>
+          <li>• Default format: 4 teams with 7 players each (customizable)</li>
           <li>• Default budget: ₹300 Crores per team with ₹1 Crore minimum bid</li>
           <li>• Timer: Enable for automatic auction progression</li>
           <li>• You can customize team names in the next step</li>

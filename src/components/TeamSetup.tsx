@@ -9,7 +9,7 @@ interface TeamSetupProps {
 }
 
 const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
-  const { tournament, setupTeams } = useAuctionStore();
+  const { tournament, setupTeams, assignCaptainsToTeams } = useAuctionStore();
   const [teamNames, setTeamNames] = useState<string[]>(
     tournament?.teams.map(team => team.name) || []
   );
@@ -28,6 +28,14 @@ const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
 
   const handleStartAuction = () => {
     setupTeams(teamNames);
+
+    // Automatically assign captains to their teams only if we have the exact right number
+    const captains = tournament?.players.filter(p => p.isCaptain) || [];
+    if (captains.length === tournament?.numberOfTeams) {
+      assignCaptainsToTeams();
+    }
+    // If captains.length is 0 or doesn't match numberOfTeams, proceed without captain functionality
+
     onNext();
   };
 
@@ -38,11 +46,32 @@ const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
       'Rajasthan Royals', 'Sunrisers Hyderabad', 'Gujarat Titans',
       'Lucknow Super Giants', 'Team 11', 'Team 12', 'Team 13', 'Team 14', 'Team 15', 'Team 16'
     ];
-    
-    const names = tournament?.teams.map((_, index) => 
+
+    const names = tournament?.teams.map((_, index) =>
       defaultNames[index] || `Team ${index + 1}`
     ) || [];
-    
+
+    setTeamNames(names);
+    setupTeams(names);
+  };
+
+  const useCaptainNames = () => {
+    if (!tournament) return;
+
+    const captains = tournament.players.filter(player => player.isCaptain);
+
+    if (captains.length !== tournament.numberOfTeams) {
+      alert(`Cannot use captain names: Expected ${tournament.numberOfTeams} captains, but found ${captains.length}. Please ensure you have exactly one captain for each team in your Excel file.`);
+      return;
+    }
+
+    const captainNames = captains.map(captain => `${captain.name}'s Team`);
+
+    // Fill remaining slots with default names if needed
+    const names = tournament.teams.map((_, index) =>
+      captainNames[index] || `Team ${index + 1}`
+    );
+
     setTeamNames(names);
     setupTeams(names);
   };
@@ -133,7 +162,32 @@ const TeamSetup: React.FC<TeamSetupProps> = ({ onNext, onBack }) => {
             >
               Use Default Names
             </button>
+            {tournament.players.filter(p => p.isCaptain).length === tournament.numberOfTeams && (
+              <button
+                onClick={useCaptainNames}
+                className="btn-primary"
+              >
+                Use Captain Names for Teams
+              </button>
+            )}
           </div>
+          {tournament.players.filter(p => p.isCaptain).length > 0 && (
+            <div className="mt-3 text-sm text-gray-600">
+              <p>
+                Captains found: {tournament.players.filter(p => p.isCaptain).map(c => c.name).join(', ')}
+                {tournament.players.filter(p => p.isCaptain).length !== tournament.numberOfTeams && (
+                  <span className="text-amber-600 ml-2">
+                    (Need exactly {tournament.numberOfTeams} captains for team naming and auto-assignment)
+                  </span>
+                )}
+                {tournament.players.filter(p => p.isCaptain).length === tournament.numberOfTeams && (
+                  <span className="text-green-600 ml-2">
+                    ✓ Perfect! Captains will be auto-assigned to teams
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Team Names Configuration */}

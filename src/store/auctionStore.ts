@@ -49,6 +49,8 @@ interface AuctionStore {
 
   setupTeams: (teamNames?: string[]) => void;
 
+  assignCaptainsToTeams: () => void;
+
   startAuction: () => void;
 
   placeBid: (teamId: string, amount: number) => void;
@@ -201,6 +203,63 @@ export const useAuctionStore = create<AuctionStore>()(
             tournament: {
               ...state.tournament,
               teams: updatedTeams,
+            },
+          };
+        });
+      },
+
+      assignCaptainsToTeams: () => {
+        set((state) => {
+          if (!state.tournament) return state;
+
+          const captains = state.tournament.players.filter(player => player.isCaptain);
+
+          // Only proceed if we have captains and the right number of them
+          if (captains.length === 0 || captains.length !== state.tournament.numberOfTeams) {
+            console.log(`Skipping captain assignment: Found ${captains.length} captains, expected ${state.tournament.numberOfTeams} or 0 for no captain functionality`);
+            return state;
+          }
+
+          // Assign each captain to a team
+          const updatedTeams = state.tournament.teams.map((team, index) => {
+            const captain = captains[index];
+            if (captain) {
+              // Create a copy of the captain with team assignment
+              const assignedCaptain = {
+                ...captain,
+                teamId: team.id,
+                soldPrice: captain.basePrice || state.tournament!.settings.minimumBid,
+              };
+
+              return {
+                ...team,
+                players: [assignedCaptain],
+                remainingBudget: team.budget - assignedCaptain.soldPrice,
+              };
+            }
+            return team;
+          });
+
+          // Update players list to mark captains as sold
+          const updatedPlayers = state.tournament.players.map(player => {
+            if (player.isCaptain) {
+              const teamIndex = captains.findIndex(c => c.id === player.id);
+              if (teamIndex !== -1) {
+                return {
+                  ...player,
+                  teamId: state.tournament!.teams[teamIndex].id,
+                  soldPrice: player.basePrice || state.tournament!.settings.minimumBid,
+                };
+              }
+            }
+            return player;
+          });
+
+          return {
+            tournament: {
+              ...state.tournament,
+              teams: updatedTeams,
+              players: updatedPlayers,
             },
           };
         });
@@ -442,13 +501,17 @@ export const useAuctionStore = create<AuctionStore>()(
         const { tournament } = get();
         if (!tournament) return;
 
+        // Check if we have properly assigned captains
+        const captains = tournament.players.filter(p => p.isCaptain);
+        const hasCaptains = captains.length === tournament.numberOfTeams;
+
         // First, advance the current player index to the next available player
         let nextIndex = tournament.currentPlayerIndex + 1;
 
-        // Find the next player that hasn't been sold or marked unsold
+        // Find the next player that hasn't been sold or marked unsold and is not a captain (if captains are being used)
         while (nextIndex < tournament.players.length) {
           const player = tournament.players[nextIndex];
-          if (!player.soldPrice && !player.isUnsold) {
+          if (!player.soldPrice && !player.isUnsold && (!hasCaptains || !player.isCaptain)) {
             break; // Found next available player
           }
           nextIndex++;
@@ -465,7 +528,9 @@ export const useAuctionStore = create<AuctionStore>()(
         if (nextIndex >= tournament.players.length) {
           // Check if we should bring back unsold players
           if (tournament.settings.enableUnsoldPlayerReturn) {
-            const unsoldPlayers = tournament.players.filter(p => p.isUnsold && !p.soldPrice);
+            const captains = tournament.players.filter(p => p.isCaptain);
+            const hasCaptains = captains.length === tournament.numberOfTeams;
+            const unsoldPlayers = tournament.players.filter(p => p.isUnsold && !p.soldPrice && (!hasCaptains || !p.isCaptain));
 
             if (unsoldPlayers.length > 0) {
               // Check if any team still has space and can afford any unsold player
@@ -507,7 +572,9 @@ export const useAuctionStore = create<AuctionStore>()(
 
           // Check if all teams are full or no team can afford any remaining player
           const allTeamsFull = tournament.teams.every(team => team.players.length >= team.maxPlayers);
-          const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold);
+          const captains = tournament.players.filter(p => p.isCaptain);
+          const hasCaptains = captains.length === tournament.numberOfTeams;
+          const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold && (!hasCaptains || !p.isCaptain));
           const teamsWithSpace = tournament.teams.filter(team => team.players.length < team.maxPlayers);
 
           // Check if any team with space can afford any remaining player
@@ -613,19 +680,23 @@ export const useAuctionStore = create<AuctionStore>()(
           return null;
         }
 
+        // Check if we have properly assigned captains
+        const captains = tournament.players.filter(p => p.isCaptain);
+        const hasCaptains = captains.length === tournament.numberOfTeams;
+
         // If auto-advance is prevented (during shuffle), just return the player at current index
         if (auctionState.preventAutoAdvance) {
           const player = tournament.players[tournament.currentPlayerIndex];
-          if (player && !player.soldPrice && !player.isUnsold) {
+          if (player && !player.soldPrice && !player.isUnsold && (!hasCaptains || !player.isCaptain)) {
             return player;
           }
           return null;
         }
 
-        // Find the next player that hasn't been sold yet
+        // Find the next player that hasn't been sold yet and is not a captain (if captains are being used)
         for (let i = tournament.currentPlayerIndex; i < tournament.players.length; i++) {
           const player = tournament.players[i];
-          if (!player.soldPrice && !player.isUnsold) {
+          if (!player.soldPrice && !player.isUnsold && (!hasCaptains || !player.isCaptain)) {
             // Update the current index if we skipped players
             if (i !== tournament.currentPlayerIndex) {
               set((state) => ({
@@ -716,20 +787,55 @@ export const useAuctionStore = create<AuctionStore>()(
         set((state) => {
           if (!state.tournament) return state;
 
-          // Reset teams to original state
-          const resetTeams = state.tournament.teams.map(team => ({
-            ...team,
-            players: [],
-            remainingBudget: team.budget,
-          }));
+          // Reset teams to original state but keep captains if they exist and are properly configured
+          const captains = state.tournament.players.filter(p => p.isCaptain);
+          const hasCaptains = captains.length === state.tournament.numberOfTeams;
 
-          // Reset players to original state
-          const resetPlayers = state.tournament.players.map(player => ({
-            ...player,
-            soldPrice: undefined,
-            teamId: undefined,
-            isUnsold: false,
-          }));
+          const resetTeams = state.tournament.teams.map((team, index) => {
+            if (hasCaptains) {
+              const captain = captains[index];
+              if (captain) {
+                // Keep captain in team
+                const assignedCaptain = {
+                  ...captain,
+                  teamId: team.id,
+                  soldPrice: captain.basePrice || state.tournament!.settings.minimumBid,
+                };
+                return {
+                  ...team,
+                  players: [assignedCaptain],
+                  remainingBudget: team.budget - assignedCaptain.soldPrice,
+                };
+              }
+            }
+            return {
+              ...team,
+              players: [],
+              remainingBudget: team.budget,
+            };
+          });
+
+          // Reset players to original state but keep captain assignments if captain functionality is active
+          const resetPlayers = state.tournament.players.map(player => {
+            if (player.isCaptain && hasCaptains) {
+              // Keep captain assignments only if we have proper captain functionality
+              const teamIndex = captains.findIndex(c => c.id === player.id);
+              if (teamIndex !== -1) {
+                return {
+                  ...player,
+                  teamId: state.tournament!.teams[teamIndex].id,
+                  soldPrice: player.basePrice || state.tournament!.settings.minimumBid,
+                  isUnsold: false,
+                };
+              }
+            }
+            return {
+              ...player,
+              soldPrice: undefined,
+              teamId: undefined,
+              isUnsold: false,
+            };
+          });
 
           // Shuffle players again for new auction order
           const shuffledPlayers = [...resetPlayers].sort(() => Math.random() - 0.5);

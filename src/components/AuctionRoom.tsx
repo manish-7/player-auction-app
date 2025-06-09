@@ -268,8 +268,10 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const startPlayerShuffle = () => {
     if (!tournament) return;
 
-    // Get all remaining players (not sold, not unsold) - these are the candidates for next player
-    const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold);
+    // Get all remaining players (not sold, not unsold, not captains if captain functionality is active) - these are the candidates for next player
+    const captains = tournament.players.filter(p => p.isCaptain);
+    const hasCaptains = captains.length === tournament.numberOfTeams;
+    const remainingPlayers = tournament.players.filter(p => !p.soldPrice && !p.isUnsold && (!hasCaptains || !p.isCaptain));
     if (remainingPlayers.length === 0) {
       // No more players to shuffle, just advance
       setIsShuffling(false);
@@ -435,6 +437,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                       playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
                       size="xl"
                       className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
+                      isCaptain={isShuffling && shufflePlayer ? shufflePlayer.isCaptain : currentPlayer?.isCaptain}
                     />
                   </div>
                 </div>
@@ -455,6 +458,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                     isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
                   }`}>
                     {isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name}
+                    {(isShuffling && shufflePlayer ? shufflePlayer.isCaptain : currentPlayer?.isCaptain) && (
+                      <span className="text-lg font-bold text-blue-600 ml-1">(C)</span>
+                    )}
                   </h1>
 
                   {/* Player Role - Mobile */}
@@ -518,6 +524,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                       playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
                       size="2xl"
                       className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
+                      isCaptain={isShuffling && shufflePlayer ? shufflePlayer.isCaptain : currentPlayer?.isCaptain}
                     />
                   </div>
                 </div>
@@ -539,6 +546,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                       isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
                     }`}>
                       {isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name}
+                      {(isShuffling && shufflePlayer ? shufflePlayer.isCaptain : currentPlayer?.isCaptain) && (
+                        <span className="text-2xl font-bold text-blue-600 ml-2">(C)</span>
+                      )}
                     </h1>
                   </div>
 
@@ -1165,18 +1175,29 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
             <h3 className="text-sm font-semibold text-gray-900">Remaining Players</h3>
             <div className="text-right">
               <div className="text-lg font-bold text-orange-600">
-                {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length}
+                {(() => {
+                  const captains = tournament.players.filter(p => p.isCaptain);
+                  const hasCaptains = captains.length === tournament.numberOfTeams;
+                  return tournament.players.filter(p => !p.soldPrice && (!hasCaptains || !p.isCaptain) && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length;
+                })()}
               </div>
               <div className="text-xs text-gray-500">Left</div>
             </div>
           </div>
 
-          {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-              {tournament.players
-                .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
+          {(() => {
+            const captains = tournament.players.filter(p => p.isCaptain);
+            const hasCaptains = captains.length === tournament.numberOfTeams;
+            const filteredPlayers = tournament.players.filter(p => !p.soldPrice && (!hasCaptains || !p.isCaptain) && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold));
+            return filteredPlayers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                {filteredPlayers
                 .sort((a, b) => {
-                  // Sort upcoming players first, then unsold players at the end
+                  // First sort by captain status (captains first)
+                  if (a.isCaptain && !b.isCaptain) return -1;
+                  if (!a.isCaptain && b.isCaptain) return 1;
+
+                  // Then sort upcoming players first, then unsold players at the end
                   const aIsUnsold = a.isUnsold;
                   const bIsUnsold = b.isUnsold;
 
@@ -1212,7 +1233,12 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                                 UNSOLD
                               </span>
                             )}
-                            <div className="font-medium text-gray-900 truncate">{player.name}</div>
+                            <div className="font-medium text-gray-900 truncate">
+                              {player.name}
+                              {player.isCaptain && (
+                                <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                              )}
+                            </div>
                           </div>
                           {player.role && (
                             <div className="text-xs text-gray-500">{player.role}</div>
@@ -1227,15 +1253,16 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                       </div>
                     </div>
                   );
-                })}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 text-sm py-8">
-              {tournament.currentPlayerIndex >= tournament.players.length - 1
-                ? "🏆 Auction completed!"
-                : "No more players to auction"}
-            </div>
-          )}
+                  })}
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 text-sm py-8">
+                {tournament.currentPlayerIndex >= tournament.players.length - 1
+                  ? "🏆 Auction completed!"
+                  : "No more players to auction"}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -1286,7 +1313,13 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                 <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
                   <div className="text-gray-700 mb-2 font-medium">Current Status:</div>
                   <div className="space-y-1 text-gray-600">
-                    <div>Players sold: {tournament.players.filter(p => p.soldPrice).length} / {tournament.players.length}</div>
+                    <div>Players sold: {(() => {
+                      const captains = tournament.players.filter(p => p.isCaptain);
+                      const hasCaptains = captains.length === tournament.numberOfTeams;
+                      const soldCount = tournament.players.filter(p => p.soldPrice && (!hasCaptains || !p.isCaptain)).length;
+                      const totalCount = tournament.players.filter(p => !hasCaptains || !p.isCaptain).length;
+                      return `${soldCount} / ${totalCount}`;
+                    })()} </div>
                     <div>Teams with space: {tournament.teams.filter(team => team.players.length < team.maxPlayers).length} / {tournament.teams.length}</div>
                     <div>Eligible teams: {eligibleTeams.length} / {tournament.teams.length}</div>
                   </div>

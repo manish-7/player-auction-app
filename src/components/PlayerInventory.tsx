@@ -17,6 +17,7 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
     isValid: boolean;
     errors: string[];
     validPlayers: Player[];
+    captains: Player[];
   } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [imagePreloadProgress, setImagePreloadProgress] = useState<{
@@ -37,7 +38,8 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
     try {
       const excelData = await readExcelFile(file);
       const minimumBid = tournament?.settings.minimumBid || 100;
-      const validation = validatePlayerData(excelData, minimumBid);
+      const numberOfTeams = tournament?.numberOfTeams || 4;
+      const validation = validatePlayerData(excelData, minimumBid, numberOfTeams);
       setValidationResult(validation);
 
       // Preload images if validation is successful
@@ -168,10 +170,14 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
                     basePrice: player.basePrice || minimumBid
                   }));
 
+                  // Extract captains from sample data
+                  const captains = updatedPlayers.filter(p => p.isCaptain);
+
                   setValidationResult({
                     isValid: true,
                     errors: [],
                     validPlayers: updatedPlayers,
+                    captains,
                   });
 
                   // Preload sample images
@@ -260,6 +266,11 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
                 </div>
                 <p className="text-green-800 mb-4">
                   Found {validationResult.validPlayers.length} valid players ready for auction.
+                  {validationResult.captains.length > 0 && (
+                    <span className="block mt-1">
+                      Captains identified: {validationResult.captains.map(c => c.name).join(', ')}
+                    </span>
+                  )}
                 </p>
 
                 {/* Image Preload Progress */}
@@ -337,6 +348,7 @@ const PlayerInventory: React.FC<PlayerInventoryProps> = ({ onNext, onBack }) => 
               <li><strong>Base Price</strong> (Optional): Starting price in currency units (default: {formatCurrency(tournament?.settings.minimumBid || 100)})</li>
               <li><strong>Rating</strong> (Optional): Player skill rating from 0-100</li>
               <li><strong>Image URL</strong> (Optional): Direct link to player's photo (e.g., https://example.com/player.jpg)</li>
+              <li><strong>Captain</strong> (Optional): Mark as captain with "yes" (exactly {tournament?.numberOfTeams || 4} captains required)</li>
             </ul>
           </div>
         </div>
