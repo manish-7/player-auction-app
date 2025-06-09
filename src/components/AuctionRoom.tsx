@@ -815,8 +815,8 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
         )}
       </div>
 
-      {/* Bid History and Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Bid History and Remaining Players */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bid History */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Bid History</h3>
@@ -857,30 +857,109 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           )}
         </div>
 
-        {/* Auction Progress */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Progress</h3>
+        {/* Remaining Players - Takes 2 columns */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-900">Remaining Players</h3>
             <div className="text-right">
-              <div className="text-lg font-bold text-blue-600">
-                {tournament.currentPlayerIndex + 1} / {tournament.players.length}
+              <div className="text-lg font-bold text-orange-600">
+                {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length}
               </div>
-              <div className="text-xs text-gray-500">Players</div>
+              <div className="text-xs text-gray-500">Left</div>
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
-              style={{
-                width: `${((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100}%`,
-              }}
-            />
+
+          {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+              {tournament.players
+                .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
+                .sort((a, b) => {
+                  // Sort upcoming players first, then unsold players at the end
+                  const aIsUnsold = a.isUnsold;
+                  const bIsUnsold = b.isUnsold;
+
+                  if (aIsUnsold && !bIsUnsold) return 1; // a (unsold) comes after b (upcoming)
+                  if (!aIsUnsold && bIsUnsold) return -1; // a (upcoming) comes before b (unsold)
+
+                  // Within each group (upcoming or unsold), randomize the order
+                  // Use player name as a seed for consistent randomization across renders
+                  const aHash = a.name.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+                  const bHash = b.name.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+                  return aHash - bHash;
+                })
+                .map((player) => {
+                  const isUnsold = player.isUnsold;
+
+                  return (
+                    <div key={player.id} className={`flex items-center justify-between text-sm rounded-lg p-3 ${
+                      isUnsold ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                    }`}>
+                      <div className="flex items-center min-w-0 flex-1">
+                        <div className="flex-shrink-0 mr-2">
+                          <PlayerImage
+                            imageUrl={player.imageUrl}
+                            playerName={player.name}
+                            size="sm"
+                            className="shadow-sm"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-1">
+                            {isUnsold && (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-yellow-200 text-yellow-800">
+                                UNSOLD
+                              </span>
+                            )}
+                            <div className="font-medium text-gray-900 truncate">{player.name}</div>
+                          </div>
+                          {player.role && (
+                            <div className="text-xs text-gray-500">{player.role}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-xs font-medium text-gray-600">
+                          {formatCurrency(player.basePrice || tournament.settings.minimumBid)}
+                        </div>
+                        <div className="text-xs text-gray-400">Base</div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 text-sm py-8">
+              {tournament.currentPlayerIndex >= tournament.players.length - 1
+                ? "🏆 Auction completed!"
+                : "No more players to auction"}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Auction Progress - Full Width */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-900">Auction Progress</h3>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">
+              {tournament.currentPlayerIndex + 1} / {tournament.players.length}
+            </div>
+            <div className="text-sm text-gray-500">Players</div>
           </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-1">
-            <span>Start</span>
-            <span>{Math.round(((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100)}%</span>
-            <span>Finish</span>
-          </div>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div
+            className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+            style={{
+              width: `${((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100}%`,
+            }}
+          />
+        </div>
+        <div className="flex justify-between text-sm text-gray-600 mt-2">
+          <span>Start</span>
+          <span className="font-medium">{Math.round(((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100)}% Complete</span>
+          <span>Finish</span>
         </div>
       </div>
 

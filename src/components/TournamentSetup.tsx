@@ -13,6 +13,7 @@ interface TournamentFormData {
   enableUnsoldPlayerReturn: boolean;
   enableTimer: boolean;
   timerDuration: number;
+  hidePricesInLiveView: boolean;
 }
 
 interface TournamentSetupProps {
@@ -39,6 +40,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
       enableUnsoldPlayerReturn: true,
       enableTimer: false,
       timerDuration: 30,
+      hidePricesInLiveView: false,
     },
   });
 
@@ -96,6 +98,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
         timerDuration: data.timerDuration,
         minimumBid: Number(data.minimumBid),
         bidIncrement: Number(data.bidIncrement),
+        hidePricesInLiveView: data.hidePricesInLiveView,
       },
     });
     onNext();
@@ -395,6 +398,24 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Live View Price Visibility Setting */}
+          <div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="hidePricesInLiveView"
+                {...register('hidePricesInLiveView')}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="hidePricesInLiveView" className="ml-2 block text-sm text-gray-900">
+                Hide prices in shared live auction view
+              </label>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              When enabled, prices will be hidden by default in the shared live auction link. Viewers can still toggle price visibility manually.
+            </p>
           </div>
 
           {/* Submit Button */}

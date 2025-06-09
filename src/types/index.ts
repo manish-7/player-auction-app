@@ -45,6 +45,7 @@ export interface TournamentSettings {
   timerDuration: number; // in seconds: 30, 60, 90, 120
   minimumBid: number; // minimum bid amount
   bidIncrement: number; // bid increment amount
+  hidePricesInLiveView: boolean; // hide prices in shared live auction view
 }
 
 export interface AuctionConstraints {

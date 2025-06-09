@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wifi, WifiOff, Eye, Clock, RefreshCw, Trophy, EyeOff } from 'lucide-react';
+import { Wifi, WifiOff, Eye, Clock, RefreshCw, Trophy } from 'lucide-react';
 import { auctionSharingService, type SharedAuctionData } from '../services/auctionSharingService';
 import { formatCurrency } from '../utils/excelUtils';
 import TeamCard from './TeamCard';
@@ -20,7 +20,8 @@ const LiveAuctionViewer: React.FC = () => {
   const [hasJoined, setHasJoined] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
-  const [showPrices, setShowPrices] = useState(true);
+  // Price visibility is controlled by tournament settings, not user preference
+  const showPrices = auctionData ? !auctionData.tournament.settings?.hidePricesInLiveView : true;
 
   // Track previous state for notifications
   const previousDataRef = useRef<SharedAuctionData | null>(null);
@@ -57,9 +58,11 @@ const LiveAuctionViewer: React.FC = () => {
                 if (currentPlayerState && currentPlayerState.soldPrice && currentPlayerState.teamId) {
                   // Player was sold - find the team that bought them
                   const soldTeam = data.tournament.teams?.find(t => t.id === currentPlayerState.teamId);
+                  const shouldShowPrice = !data.tournament.settings?.hidePricesInLiveView;
+                  const priceText = shouldShowPrice ? ` for ${formatCurrency(currentPlayerState.soldPrice)}` : '';
                   success(
                     `${prevPlayer.name} SOLD!`,
-                    `Bought by ${soldTeam?.name || 'Unknown Team'} for ${formatCurrency(currentPlayerState.soldPrice)}`,
+                    `Bought by ${soldTeam?.name || 'Unknown Team'}${priceText}`,
                     6000
                   );
                 } else if (currentPlayerState && currentPlayerState.isUnsold) {
@@ -76,9 +79,13 @@ const LiveAuctionViewer: React.FC = () => {
             // New player started
             const currentPlayer = data.tournament.players[currentPlayerIndex];
             if (currentPlayer && currentPlayerIndex !== prevPlayerIndex) {
+              const shouldShowPrice = !data.tournament.settings?.hidePricesInLiveView;
+              const basePriceText = shouldShowPrice
+                ? `Base price: ${formatCurrency(currentPlayer.basePrice || data.tournament.settings?.minimumBid || 100)}`
+                : currentPlayer.role ? `Role: ${currentPlayer.role}` : 'Now up for auction';
               info(
                 `Now Auctioning: ${currentPlayer.name}`,
-                `Base price: ${formatCurrency(currentPlayer.basePrice || data.tournament.settings?.minimumBid || 100)}`,
+                basePriceText,
                 3000
               );
             }
@@ -257,18 +264,7 @@ const LiveAuctionViewer: React.FC = () => {
                 Updated {lastUpdated.toLocaleTimeString()}
               </div>
             )}
-            <button
-              onClick={() => setShowPrices(!showPrices)}
-              className={`flex items-center text-sm transition-colors px-2 py-1 rounded border ${
-                showPrices
-                  ? 'text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100'
-                  : 'text-gray-600 border-gray-200 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-              title={showPrices ? 'Hide prices' : 'Show prices'}
-            >
-              {showPrices ? <Eye className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
-              {showPrices ? 'Hide Prices' : 'Show Prices'}
-            </button>
+
             <button
               onClick={handleRefresh}
               className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
@@ -435,6 +431,85 @@ const LiveAuctionViewer: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Remaining Players */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">Remaining Players</h3>
+            <div className="text-right">
+              <div className="text-lg font-bold text-orange-600">
+                {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length}
+              </div>
+              <div className="text-sm text-gray-500">Left</div>
+            </div>
+          </div>
+
+          {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+              {tournament.players
+                .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
+                .sort((a, b) => {
+                  // Sort upcoming players first, then unsold players at the end
+                  const aIsUnsold = a.isUnsold;
+                  const bIsUnsold = b.isUnsold;
+
+                  if (aIsUnsold && !bIsUnsold) return 1; // a (unsold) comes after b (upcoming)
+                  if (!aIsUnsold && bIsUnsold) return -1; // a (upcoming) comes before b (unsold)
+
+                  // Within each group (upcoming or unsold), randomize the order
+                  // Use player name as a seed for consistent randomization across renders
+                  const aHash = a.name.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+                  const bHash = b.name.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+                  return aHash - bHash;
+                })
+                .map((player) => {
+                  const isUnsold = player.isUnsold;
+
+                  return (
+                    <div key={player.id} className={`flex items-center justify-between text-sm rounded-lg p-2 ${
+                      isUnsold ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                    }`}>
+                      <div className="flex items-center min-w-0 flex-1">
+                        <div className="flex-shrink-0 mr-2">
+                          <PlayerImage
+                            imageUrl={player.imageUrl}
+                            playerName={player.name}
+                            size="sm"
+                            className="shadow-sm"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-1">
+                            {isUnsold && (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-yellow-200 text-yellow-800">
+                                UNSOLD
+                              </span>
+                            )}
+                            <div className="font-medium text-gray-900 truncate">{player.name}</div>
+                          </div>
+                          {player.role && (
+                            <div className="text-xs text-gray-500">{player.role}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-xs font-medium text-gray-600">
+                          {showPrices ? formatCurrency(player.basePrice || tournament.settings?.minimumBid || 100) : '***'}
+                        </div>
+                        <div className="text-xs text-gray-400">Base</div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 text-sm py-8">
+              {tournament.currentPlayerIndex >= tournament.players.length - 1
+                ? "🏆 Auction completed!"
+                : "No more players to auction"}
+            </div>
+          )}
         </div>
       </div>
     </div>

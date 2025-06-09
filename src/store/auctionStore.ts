@@ -147,6 +147,7 @@ export const useAuctionStore = create<AuctionStore>()(
           timerDuration: 30,
           minimumBid: 100,
           bidIncrement: 100, // Default bid increment same as minimum bid
+          hidePricesInLiveView: false,
         };
 
         const tournament: Tournament = {
