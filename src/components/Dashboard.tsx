@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff, Save } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency, exportAuctionResults } from '../utils/excelUtils';
+import type { Team, Player } from '../types';
 import PlayerImage from './PlayerImage';
 import SaveAuctionDialog from './SaveAuctionDialog';
 
@@ -49,18 +50,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
     }
   };
 
+  // Helper function to calculate actual spent amount (excluding captains)
+  const getActualSpent = (team: Team): number => {
+    return team.players
+      .filter((p: Player) => !p.isCaptain) // Exclude captains from budget calculations
+      .reduce((sum: number, p: Player) => sum + (p.soldPrice || 0), 0);
+  };
+
   // Calculate statistics
-  const totalSpent = tournament.teams.reduce((sum, team) => sum + (team.budget - team.remainingBudget), 0);
-  const soldPlayers = tournament.players.filter(p => p.soldPrice).length;
+  const totalSpent = tournament.teams.reduce((sum, team) => sum + getActualSpent(team), 0);
+  const soldPlayers = tournament.players.filter(p => p.soldPrice && !p.isCaptain).length; // Exclude captains
   const unsoldPlayers = tournament.players.filter(p => p.isUnsold).length;
   const averagePrice = soldPlayers > 0 ? totalSpent / soldPlayers : 0;
 
   const mostExpensivePlayer = tournament.players
-    .filter(p => p.soldPrice)
+    .filter(p => p.soldPrice && !p.isCaptain) // Exclude captains from most expensive
     .sort((a, b) => (b.soldPrice || 0) - (a.soldPrice || 0))[0];
 
   const teamWithMostSpent = tournament.teams
-    .sort((a, b) => (b.budget - b.remainingBudget) - (a.budget - a.remainingBudget))[0];
+    .sort((a, b) => getActualSpent(b) - getActualSpent(a))[0];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -211,15 +219,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                     <div>
                       <span className="text-gray-500">Total Spent:</span>
                       <span className="ml-2 font-medium">
-                        {showPrices ? formatCurrency(team.budget - team.remainingBudget) : '***'}
+                        {showPrices ? formatCurrency(getActualSpent(team)) : '***'}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Avg. Price:</span>
                       <span className="ml-2 font-medium">
                         {showPrices
-                          ? (team.players.length > 0
-                              ? formatCurrency((team.budget - team.remainingBudget) / team.players.length)
+                          ? (team.players.filter(p => !p.isCaptain).length > 0
+                              ? formatCurrency(getActualSpent(team) / team.players.filter(p => !p.isCaptain).length)
                               : 'N/A'
                             )
                           : '***'
@@ -282,7 +290,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                               <td className="px-4 py-2 text-sm text-gray-500">{player.role || 'N/A'}</td>
                               {showPrices && <td className="px-4 py-2 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>}
                               {showPrices && <td className="px-4 py-2 text-sm font-medium text-green-600">
-                                {formatCurrency(player.soldPrice || 0)}
+                                {player.isCaptain ? (
+                                  <span className="text-gray-400">-</span>
+                                ) : (
+                                  formatCurrency(player.soldPrice || 0)
+                                )}
                               </td>}
                               <td className="px-4 py-2 text-sm text-gray-500">{player.rating || 'N/A'}</td>
                             </tr>
@@ -344,8 +356,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                           <td className="px-4 py-3 text-sm text-gray-500">{player.role || 'N/A'}</td>
                           {showPrices && <td className="px-4 py-3 text-sm text-gray-500">{formatCurrency(player.basePrice || 100)}</td>}
                           {showPrices && <td className="px-4 py-3 text-sm font-medium">
-                            {player.soldPrice ? (
-                              <span className="text-green-600">{formatCurrency(player.soldPrice)}</span>
+                            {player.soldPrice !== undefined ? (
+                              player.isCaptain ? (
+                                <span className="text-gray-400">-</span>
+                              ) : (
+                                <span className="text-green-600">{formatCurrency(player.soldPrice)}</span>
+                              )
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
@@ -407,7 +423,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                     <p className="text-xl font-bold text-green-900">{teamWithMostSpent.name}</p>
                     <p className="text-green-700">{teamWithMostSpent.players.length} players</p>
                     <p className="text-2xl font-bold text-green-900 mt-2">
-                      {showPrices ? formatCurrency(teamWithMostSpent.budget - teamWithMostSpent.remainingBudget) : '***'}
+                      {showPrices ? formatCurrency(getActualSpent(teamWithMostSpent)) : '***'}
                     </p>
                   </div>
                 </div>
@@ -419,8 +435,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'].map(role => {
                     const rolePlayers = tournament.players.filter(p => p.role === role);
-                    const soldInRole = rolePlayers.filter(p => p.soldPrice);
-                    const avgPrice = soldInRole.length > 0 
+                    const soldInRole = rolePlayers.filter(p => p.soldPrice && !p.isCaptain); // Exclude captains
+                    const avgPrice = soldInRole.length > 0
                       ? soldInRole.reduce((sum, p) => sum + (p.soldPrice || 0), 0) / soldInRole.length
                       : 0;
 

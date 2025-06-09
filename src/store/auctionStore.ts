@@ -225,22 +225,23 @@ export const useAuctionStore = create<AuctionStore>()(
             const captain = captains[index];
             if (captain) {
               // Create a copy of the captain with team assignment
+              // Captains are free - they don't consume budget
               const assignedCaptain = {
                 ...captain,
                 teamId: team.id,
-                soldPrice: captain.basePrice || state.tournament!.settings.minimumBid,
+                soldPrice: 0, // Captains are free
               };
 
               return {
                 ...team,
                 players: [assignedCaptain],
-                remainingBudget: team.budget - assignedCaptain.soldPrice,
+                remainingBudget: team.budget, // No budget deduction for captains
               };
             }
             return team;
           });
 
-          // Update players list to mark captains as sold
+          // Update players list to mark captains as assigned
           const updatedPlayers = state.tournament.players.map(player => {
             if (player.isCaptain) {
               const teamIndex = captains.findIndex(c => c.id === player.id);
@@ -248,7 +249,7 @@ export const useAuctionStore = create<AuctionStore>()(
                 return {
                   ...player,
                   teamId: state.tournament!.teams[teamIndex].id,
-                  soldPrice: player.basePrice || state.tournament!.settings.minimumBid,
+                  soldPrice: 0, // Captains are free
                 };
               }
             }
@@ -795,16 +796,16 @@ export const useAuctionStore = create<AuctionStore>()(
             if (hasCaptains) {
               const captain = captains[index];
               if (captain) {
-                // Keep captain in team
+                // Keep captain in team - captains are free
                 const assignedCaptain = {
                   ...captain,
                   teamId: team.id,
-                  soldPrice: captain.basePrice || state.tournament!.settings.minimumBid,
+                  soldPrice: 0, // Captains are free
                 };
                 return {
                   ...team,
                   players: [assignedCaptain],
-                  remainingBudget: team.budget - assignedCaptain.soldPrice,
+                  remainingBudget: team.budget, // No budget deduction for captains
                 };
               }
             }
@@ -824,7 +825,7 @@ export const useAuctionStore = create<AuctionStore>()(
                 return {
                   ...player,
                   teamId: state.tournament!.teams[teamIndex].id,
-                  soldPrice: player.basePrice || state.tournament!.settings.minimumBid,
+                  soldPrice: 0, // Captains are free
                   isUnsold: false,
                 };
               }

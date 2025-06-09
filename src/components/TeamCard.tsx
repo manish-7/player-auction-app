@@ -178,7 +178,11 @@ const TeamCard: React.FC<TeamCardProps> = ({
                 Squad ({team.players?.length || 0}/{team.maxPlayers})
               </h4>
               <div className="text-xs text-gray-500">
-                Spent: {showPrices ? formatCurrency(team.budget - team.remainingBudget) : '***'}
+                Spent: {showPrices ? formatCurrency(
+                  team.players
+                    .filter(p => !p.isCaptain) // Exclude captains from budget calculations
+                    .reduce((sum, p) => sum + (p.soldPrice || 0), 0)
+                ) : '***'}
               </div>
             </div>
 
@@ -226,7 +230,13 @@ const TeamCard: React.FC<TeamCardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs font-semibold text-green-600 flex-shrink-0">
-                      {showPrices ? formatCurrency(player.soldPrice || 0) : '***'}
+                      {showPrices ? (
+                        player.isCaptain ? (
+                          <span className="text-gray-400">-</span>
+                        ) : (
+                          formatCurrency(player.soldPrice || 0)
+                        )
+                      ) : '***'}
                     </div>
                   </div>
                 ))}
