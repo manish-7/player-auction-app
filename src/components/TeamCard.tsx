@@ -163,8 +163,8 @@ const TeamCard: React.FC<TeamCardProps> = ({
 
         {!isEligible && (
           <div className="text-center py-1 text-sm text-gray-500">
-            {team.remainingBudget < (minBid || 100) ? 'Insufficient Budget' :
-             (team.players?.length || 0) >= team.maxPlayers ? 'Squad Full' : 'Passed'}
+            {(team.players?.length || 0) >= team.maxPlayers ? 'Squad Full' :
+             team.remainingBudget < (minBid || 100) ? 'Insufficient Budget' : 'Passed'}
           </div>
         )}
       </div>

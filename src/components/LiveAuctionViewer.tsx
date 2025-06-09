@@ -406,6 +406,7 @@ const LiveAuctionViewer: React.FC = () => {
 
                 // For live viewer, calculate eligibility to show proper status messages
                 // but don't gray out teams (they should still be visible)
+                // Check squad space first (hard constraint), then budget
                 const hasSquadSpace = (safeTeam.players?.length || 0) < safeTeam.maxPlayers;
                 const hasBudget = safeTeam.remainingBudget >= minBid;
                 const isEligible = hasSquadSpace && hasBudget;

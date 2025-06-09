@@ -651,18 +651,18 @@ export const useAuctionStore = create<AuctionStore>()(
         if (!tournament || !currentPlayer) return [];
 
         return tournament.teams.filter(team => {
-          // Check if team has budget for minimum bid
+          // Check if team has space for more players (hard constraint - check first)
+          if (team.players.length >= team.maxPlayers) return false;
+
+          // Check if team hasn't passed
+          if (auctionState.passedTeams.includes(team.id)) return false;
+
+          // Check if team has budget for minimum bid (only if they have space)
           const minBid = auctionState.highestBid?.amount
             ? auctionState.highestBid.amount + Number(get().settings.bidIncrement)
             : currentPlayer.basePrice || tournament.settings.minimumBid;
 
           if (team.remainingBudget < minBid) return false;
-
-          // Check if team has space for more players
-          if (team.players.length >= team.maxPlayers) return false;
-
-          // Check if team hasn't passed
-          if (auctionState.passedTeams.includes(team.id)) return false;
 
           return true;
         });
