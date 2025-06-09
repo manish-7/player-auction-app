@@ -229,6 +229,52 @@ const LiveAuctionViewer: React.FC = () => {
   const { tournament, auctionState, isShuffling } = auctionData;
   const currentPlayer = tournament.players && tournament.players[tournament.currentPlayerIndex];
 
+  // Helper function to get auctionable player count (excluding captains)
+  const getAuctionablePlayerCount = () => {
+    const captains = tournament.players.filter(p => p.isCaptain);
+    const hasCaptains = captains.length === tournament.numberOfTeams;
+    return tournament.players.filter(p => !hasCaptains || !p.isCaptain).length;
+  };
+
+  // Helper function to get current auction progress (excluding captains)
+  const getCurrentAuctionProgress = () => {
+    const captains = tournament.players.filter(p => p.isCaptain);
+    const hasCaptains = captains.length === tournament.numberOfTeams;
+
+    // Find the current player's position in the auctionable players list
+    let currentAuctionableIndex = 0;
+    for (let i = 0; i <= tournament.currentPlayerIndex && i < tournament.players.length; i++) {
+      const player = tournament.players[i];
+      if (!hasCaptains || !player.isCaptain) {
+        if (i === tournament.currentPlayerIndex) {
+          break;
+        }
+        currentAuctionableIndex++;
+      }
+    }
+    return currentAuctionableIndex + 1;
+  };
+
+  // Helper function to calculate max bid for a team (same logic as auction store)
+  const getMaxBidForTeam = (team: any) => {
+    if (!tournament) return 0;
+
+    const remainingSlots = team.maxPlayers - team.players.length;
+
+    // If this is the last slot, team can bid their entire remaining budget
+    if (remainingSlots <= 1) {
+      return team.remainingBudget;
+    }
+
+    // Calculate maximum bid: remaining budget minus minimum required for remaining slots
+    const minimumBid = tournament.settings?.minimumBid || 100;
+    const reserveForRemainingSlots = (remainingSlots - 1) * minimumBid;
+    const maxBid = team.remainingBudget - reserveForRemainingSlots;
+
+    // Ensure max bid is at least the minimum bid
+    return Math.max(maxBid, minimumBid);
+  };
+
   // When shuffling, keep showing the previous bid info to maintain consistency
   const shouldShowPreviousBid = isShuffling && previousDataRef.current &&
     previousDataRef.current.auctionState.highestBid !== null;
@@ -359,7 +405,7 @@ const LiveAuctionViewer: React.FC = () => {
                           </span>
                         )}
                         <div className="mt-2 text-sm text-gray-500">
-                          Player {(tournament.currentPlayerIndex || 0) + 1} of {tournament.players?.length || 0}
+                          Player {getCurrentAuctionProgress()} of {getAuctionablePlayerCount()}
                         </div>
                       </div>
                     </div>
@@ -390,13 +436,13 @@ const LiveAuctionViewer: React.FC = () => {
                       {/* Progress Bar - Mobile */}
                       <div className="text-right">
                         <div className="text-xs text-gray-500 mb-1">
-                          {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                          {getCurrentAuctionProgress()} / {getAuctionablePlayerCount()}
                         </div>
                         <div className="w-24 bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                             style={{
-                              width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                              width: `${getAuctionablePlayerCount() ? (getCurrentAuctionProgress() / getAuctionablePlayerCount()) * 100 : 0}%`,
                             }}
                           />
                         </div>
@@ -457,14 +503,14 @@ const LiveAuctionViewer: React.FC = () => {
                     {/* Progress Indicator - Far Right */}
                     <div className="text-right flex-shrink-0">
                       <div className="text-lg font-bold text-gray-700">
-                        {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                        {getCurrentAuctionProgress()} / {getAuctionablePlayerCount()}
                       </div>
                       <div className="text-sm text-gray-500">Players</div>
                       <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
                         <div
                           className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                           style={{
-                            width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                            width: `${getAuctionablePlayerCount() ? (getCurrentAuctionProgress() / getAuctionablePlayerCount()) * 100 : 0}%`,
                           }}
                         />
                       </div>
@@ -489,7 +535,7 @@ const LiveAuctionViewer: React.FC = () => {
               </p>
               <div className="mt-4 text-sm text-green-600">
                 <span className="font-medium">
-                  {tournament.players?.length || 0} players processed
+                  {getAuctionablePlayerCount()} players processed
                 </span>
               </div>
             </div>
@@ -537,7 +583,7 @@ const LiveAuctionViewer: React.FC = () => {
                     onPass={() => {}}
                     disabled={true}
                     minBid={minBid}
-                    maxBid={team.remainingBudget}
+                    maxBid={getMaxBidForTeam(safeTeam)}
                     viewerMode={true}
                     showPrices={showPrices}
                   />
@@ -557,16 +603,28 @@ const LiveAuctionViewer: React.FC = () => {
             <h3 className="text-base md:text-lg font-semibold text-gray-900">Remaining Players</h3>
             <div className="text-right">
               <div className="text-base md:text-lg font-bold text-orange-600">
-                {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length}
+                {(() => {
+                  const captains = tournament.players.filter(p => p.isCaptain);
+                  const hasCaptains = captains.length === tournament.numberOfTeams;
+                  return tournament.players.filter(p => !p.soldPrice && (!hasCaptains || !p.isCaptain) && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length;
+                })()}
               </div>
               <div className="text-xs md:text-sm text-gray-500">Left</div>
             </div>
           </div>
 
-          {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0 ? (
+          {(() => {
+            const captains = tournament.players.filter(p => p.isCaptain);
+            const hasCaptains = captains.length === tournament.numberOfTeams;
+            return tournament.players.filter(p => !p.soldPrice && (!hasCaptains || !p.isCaptain) && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0;
+          })() ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 max-h-64 overflow-y-auto">
-              {tournament.players
-                .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
+              {(() => {
+                const captains = tournament.players.filter(p => p.isCaptain);
+                const hasCaptains = captains.length === tournament.numberOfTeams;
+                return tournament.players
+                  .filter(p => !p.soldPrice && (!hasCaptains || !p.isCaptain) && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold));
+              })()
                 .sort((a, b) => {
                   // First sort by captain status (captains first)
                   if (a.isCaptain && !b.isCaptain) return -1;

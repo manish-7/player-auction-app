@@ -64,6 +64,34 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const eligibleTeams = getEligibleTeams();
   const allTeamsFull = areAllTeamsFull();
 
+  // Helper function to get auctionable player count (excluding captains)
+  const getAuctionablePlayerCount = () => {
+    if (!tournament) return 0;
+    const captains = tournament.players.filter(p => p.isCaptain);
+    const hasCaptains = captains.length === tournament.numberOfTeams;
+    return tournament.players.filter(p => !hasCaptains || !p.isCaptain).length;
+  };
+
+  // Helper function to get current auction progress (excluding captains)
+  const getCurrentAuctionProgress = () => {
+    if (!tournament) return 1;
+    const captains = tournament.players.filter(p => p.isCaptain);
+    const hasCaptains = captains.length === tournament.numberOfTeams;
+
+    // Find the current player's position in the auctionable players list
+    let currentAuctionableIndex = 0;
+    for (let i = 0; i <= tournament.currentPlayerIndex && i < tournament.players.length; i++) {
+      const player = tournament.players[i];
+      if (!hasCaptains || !player.isCaptain) {
+        if (i === tournament.currentPlayerIndex) {
+          break;
+        }
+        currentAuctionableIndex++;
+      }
+    }
+    return currentAuctionableIndex + 1;
+  };
+
   // Start auction when component mounts
   useEffect(() => {
     if (tournament && !tournament.isAuctionStarted) {
@@ -1257,7 +1285,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               </div>
             ) : (
               <div className="text-center text-gray-500 text-sm py-8">
-                {tournament.currentPlayerIndex >= tournament.players.length - 1
+                {getCurrentAuctionProgress() >= getAuctionablePlayerCount()
                   ? "🏆 Auction completed!"
                   : "No more players to auction"}
               </div>
@@ -1272,7 +1300,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           <h3 className="text-sm font-semibold text-gray-900">Auction Progress</h3>
           <div className="text-right">
             <div className="text-2xl font-bold text-blue-600">
-              {tournament.currentPlayerIndex + 1} / {tournament.players.length}
+              {getCurrentAuctionProgress()} / {getAuctionablePlayerCount()}
             </div>
             <div className="text-sm text-gray-500">Players</div>
           </div>
@@ -1281,13 +1309,13 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           <div
             className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
             style={{
-              width: `${((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100}%`,
+              width: `${getAuctionablePlayerCount() ? (getCurrentAuctionProgress() / getAuctionablePlayerCount()) * 100 : 0}%`,
             }}
           />
         </div>
         <div className="flex justify-between text-sm text-gray-600 mt-2">
           <span>Start</span>
-          <span className="font-medium">{Math.round(((tournament.currentPlayerIndex + 1) / tournament.players.length) * 100)}% Complete</span>
+          <span className="font-medium">{Math.round(getAuctionablePlayerCount() ? (getCurrentAuctionProgress() / getAuctionablePlayerCount()) * 100 : 0)}% Complete</span>
           <span>Finish</span>
         </div>
       </div>
