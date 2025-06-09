@@ -187,7 +187,8 @@ function App() {
       {/* Header */}
       <header className="gradient-bg shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
+            {/* Left: Logo and Title */}
             <div className="flex items-center min-w-0 flex-shrink-0">
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -207,87 +208,8 @@ function App() {
               </div>
             </div>
 
-            {/* Persistence Indicator & Actions */}
-            <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0">
-              {tournament && (
-                <div className="hidden sm:flex items-center space-x-1.5">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-white/80 text-xs">Auto-saved</span>
-                </div>
-              )}
-
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                {/* Tournament History Button */}
-                <button
-                  onClick={() => handleNavigateToStep('history')}
-                  className="bg-purple-500/80 hover:bg-purple-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
-                  title="View tournament history"
-                >
-                  <span className="hidden sm:inline">📚 History</span>
-                  <span className="sm:hidden">📚</span>
-                </button>
-
-                {tournament && (
-                  <>
-                    {(tournament.isAuctionStarted || tournament.isAuctionCompleted) && (
-                      <button
-                        onClick={async () => {
-                          const confirmed = await showConfirmation({
-                            title: 'Restart Auction?',
-                            message: 'This will reset all teams and reshuffle players, but keep your tournament setup. All current auction progress will be lost.',
-                            confirmText: 'Restart Auction',
-                            cancelText: 'Cancel',
-                            type: 'warning',
-                            icon: <RotateCcw className="w-6 h-6 text-white" />
-                          });
-                          if (confirmed) {
-                            restartAuction();
-                            setCurrentStep('auction');
-                          }
-                        }}
-                        className="bg-orange-500/80 hover:bg-orange-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
-                        title="Restart auction with same players and teams"
-                      >
-                        <span className="hidden sm:inline">🔄 Restart Auction</span>
-                        <span className="sm:hidden">🔄</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={handleNewTournament}
-                      className="bg-green-500/80 hover:bg-green-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
-                      title="Start a new tournament (will offer to save current one)"
-                    >
-                      <span className="hidden sm:inline">🆕 New Tournament</span>
-                      <span className="sm:hidden">🆕</span>
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const confirmed = await showConfirmation({
-                          title: 'Clear All Data?',
-                          message: 'This will permanently delete all saved tournament data, including players, teams, and auction history. This action cannot be undone.',
-                          confirmText: 'Clear All Data',
-                          cancelText: 'Cancel',
-                          type: 'danger',
-                          icon: <Zap className="w-6 h-6 text-white" />
-                        });
-                        if (confirmed) {
-                          clearStorage();
-                          setCurrentStep('tournament');
-                        }
-                      }}
-                      className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs px-2 sm:px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
-                      title="Clear all data including history"
-                    >
-                      <span className="hidden sm:inline">🗑️ Clear All</span>
-                      <span className="sm:hidden">🗑️</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Progress Indicator */}
-            <div className="hidden md:flex items-center space-x-2 flex-1 justify-center max-w-2xl">
+            {/* Center: Progress Indicator (Desktop only) */}
+            <div className="hidden xl:flex items-center space-x-2 flex-1 justify-center max-w-2xl">
               {[
                 { id: 'tournament', label: 'Setup', step: 1, icon: '⚙️' },
                 { id: 'players', label: 'Players', step: 2, icon: '👥' },
@@ -335,11 +257,90 @@ function App() {
                 );
               })}
             </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {tournament && (
+                <div className="hidden lg:flex items-center space-x-1.5 mr-2">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-white/80 text-xs">Auto-saved</span>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-1">
+                {/* Tournament History Button */}
+                <button
+                  onClick={() => handleNavigateToStep('history')}
+                  className="bg-purple-500/80 hover:bg-purple-600/90 text-white text-xs px-2 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                  title="View tournament history"
+                >
+                  <span className="hidden md:inline">📚 History</span>
+                  <span className="md:hidden">📚</span>
+                </button>
+
+                {tournament && (
+                  <>
+                    {(tournament.isAuctionStarted || tournament.isAuctionCompleted) && (
+                      <button
+                        onClick={async () => {
+                          const confirmed = await showConfirmation({
+                            title: 'Restart Auction?',
+                            message: 'This will reset all teams and reshuffle players, but keep your tournament setup. All current auction progress will be lost.',
+                            confirmText: 'Restart Auction',
+                            cancelText: 'Cancel',
+                            type: 'warning',
+                            icon: <RotateCcw className="w-6 h-6 text-white" />
+                          });
+                          if (confirmed) {
+                            restartAuction();
+                            setCurrentStep('auction');
+                          }
+                        }}
+                        className="bg-orange-500/80 hover:bg-orange-600/90 text-white text-xs px-2 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                        title="Restart auction with same players and teams"
+                      >
+                        <span className="hidden md:inline">🔄 Restart</span>
+                        <span className="md:hidden">🔄</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={handleNewTournament}
+                      className="bg-green-500/80 hover:bg-green-600/90 text-white text-xs px-2 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                      title="Start a new tournament (will offer to save current one)"
+                    >
+                      <span className="hidden md:inline">🆕 New</span>
+                      <span className="md:hidden">🆕</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const confirmed = await showConfirmation({
+                          title: 'Clear All Data?',
+                          message: 'This will permanently delete all saved tournament data, including players, teams, and auction history. This action cannot be undone.',
+                          confirmText: 'Clear All Data',
+                          cancelText: 'Cancel',
+                          type: 'danger',
+                          icon: <Zap className="w-6 h-6 text-white" />
+                        });
+                        if (confirmed) {
+                          clearStorage();
+                          setCurrentStep('tournament');
+                        }
+                      }}
+                      className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs px-2 py-1.5 rounded-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md"
+                      title="Clear all data including history"
+                    >
+                      <span className="hidden md:inline">🗑️ Clear</span>
+                      <span className="md:hidden">🗑️</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Mobile Progress Indicator */}
-        <div className="md:hidden border-t border-white/20">
+        <div className="xl:hidden border-t border-white/20">
           <div className="max-w-7xl mx-auto px-4 py-2">
             <div className="flex items-center justify-center space-x-1 overflow-x-auto">
               {[

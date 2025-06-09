@@ -245,11 +245,13 @@ export class AuctionSharingService {
         players: team.players.map(player => ({
           ...player,
           rating: player.rating ?? null, // Convert undefined to null
+          imageUrl: player.imageUrl ?? null, // Convert undefined to null to preserve property
         }))
       })),
       players: tournament.players.map(player => ({
         ...player,
         rating: player.rating ?? null, // Convert undefined to null
+        imageUrl: player.imageUrl ?? null, // Convert undefined to null to preserve property
       }))
     }) as Tournament;
   }

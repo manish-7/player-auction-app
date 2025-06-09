@@ -345,180 +345,269 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
-      {/* Compact Header */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Timer */}
-        <div className="flex items-center justify-center lg:justify-start">
-          {tournament.settings.enableTimer ? (
-            <div className="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-500 rounded-xl p-4 shadow-lg">
-              <Timer className="w-6 h-6 text-white mr-2" />
-              <div className="text-2xl font-bold text-white">
-                {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-              </div>
-            </div>
-          ) : (
-            <div className="inline-flex items-center bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl p-4 shadow-lg">
-              <Timer className="w-6 h-6 text-white mr-2" />
-              <div className="text-lg font-medium text-white">
-                No Timer
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Current Player Info or End Auction */}
-        <div className="text-center">
-          {allTeamsFull ? (
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                All Teams Complete!
-              </h1>
-              <button
-                onClick={() => setShowEndAuctionDialog(true)}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center mx-auto"
-              >
-                <Trophy className="w-5 h-5 mr-2" />
-                End Auction
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-6">
-              {/* Player Image - Fixed Size */}
-              <div className="flex-shrink-0">
-                <div className={`transition-all duration-200 ${isShuffling ? 'animate-pulse scale-105' : ''}`}>
-                  <PlayerImage
-                    key={isShuffling && shufflePlayer ? `shuffle-${shufflePlayer.id}-${shuffleCounter}` : `current-${currentPlayer?.id}`}
-                    imageUrl={isShuffling ? undefined : currentPlayer?.imageUrl}
-                    playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
-                    size="2xl"
-                    className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
-                  />
-                </div>
-              </div>
-
-              {/* Player Info - Compact Layout */}
-              <div className="text-center w-80">
-                {/* Shuffling Indicator */}
-                {isShuffling && (
-                  <div className="mb-2">
-                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium animate-bounce">
-                      🎲 Selecting Next Player...
-                    </div>
+      {/* Responsive Header */}
+      <div className="space-y-4">
+        {/* Mobile Layout */}
+        <div className="block lg:hidden">
+          {/* Timer and Actions Row */}
+          <div className="flex items-center justify-between mb-4">
+            {/* Timer */}
+            <div className="flex-shrink-0">
+              {tournament.settings.enableTimer ? (
+                <div className="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-500 rounded-lg p-2 shadow-lg">
+                  <Timer className="w-4 h-4 text-white mr-1" />
+                  <div className="text-lg font-bold text-white">
+                    {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
                   </div>
-                )}
+                </div>
+              ) : (
+                <div className="inline-flex items-center bg-gradient-to-r from-gray-400 to-gray-500 rounded-lg p-2 shadow-lg">
+                  <Timer className="w-4 h-4 text-white mr-1" />
+                  <div className="text-sm font-medium text-white">
+                    No Timer
+                  </div>
+                </div>
+              )}
+            </div>
 
-                {/* Player Name - Single Line */}
-                <div className="flex items-center justify-center mb-4">
-                  <h1 className={`text-4xl font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 ${
+            {/* Quick Actions */}
+            <div className="flex items-center space-x-2">
+              {canUndo() && (
+                <button
+                  onClick={undoBid}
+                  className="btn-secondary flex items-center text-sm py-1 px-2"
+                  title="Undo last bid"
+                >
+                  <Undo className="w-3 h-3 mr-1" />
+                  Undo
+                </button>
+              )}
+
+              {auctionState.highestBid ? (
+                <button
+                  onClick={handleSoldPlayer}
+                  disabled={isShuffling}
+                  className={`btn-success flex items-center text-sm py-1 px-2 transition-all duration-300 ${
+                    isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <Trophy className="w-3 h-3 mr-1" />
+                  {isShuffling ? 'Shuffling...' : 'Sold'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleUnsoldPlayer}
+                  disabled={isShuffling}
+                  className={`btn-danger flex items-center text-sm py-1 px-2 transition-all duration-300 ${
+                    isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <SkipForward className="w-3 h-3 mr-1" />
+                  {isShuffling ? 'Shuffling...' : 'Unsold'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Player Info - Mobile */}
+          <div className="text-center">
+            {allTeamsFull ? (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                  All Teams Complete!
+                </h1>
+                <button
+                  onClick={() => setShowEndAuctionDialog(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center mx-auto"
+                >
+                  <Trophy className="w-4 h-4 mr-2" />
+                  End Auction
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                {/* Player Image - Mobile Size */}
+                <div className="flex-shrink-0">
+                  <div className={`transition-all duration-200 ${isShuffling ? 'animate-pulse scale-105' : ''}`}>
+                    <PlayerImage
+                      key={isShuffling && shufflePlayer ? `shuffle-${shufflePlayer.id}-${shuffleCounter}` : `current-${currentPlayer?.id}`}
+                      imageUrl={isShuffling ? undefined : currentPlayer?.imageUrl}
+                      playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
+                      size="xl"
+                      className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
+                    />
+                  </div>
+                </div>
+
+                {/* Player Info - Mobile Layout */}
+                <div className="text-left flex-1 min-w-0">
+                  {/* Shuffling Indicator */}
+                  {isShuffling && (
+                    <div className="mb-2">
+                      <div className="inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium animate-bounce">
+                        🎲 Selecting Next Player...
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Player Name - Mobile */}
+                  <h1 className={`text-2xl font-bold leading-tight truncate transition-all duration-200 ${
                     isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
                   }`}>
                     {isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name}
                   </h1>
-                </div>
 
-                {/* Player Role - Fixed Height */}
-                <div className="h-8 flex items-center justify-center">
-                  {(isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role) ? (
-                    <span className={`inline-block text-sm font-medium px-3 py-1 rounded-full transition-all duration-200 ${
+                  {/* Player Role - Mobile */}
+                  {(isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role) && (
+                    <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full mt-1 transition-all duration-200 ${
                       isShuffling ? 'bg-yellow-100 text-yellow-800 animate-pulse' : 'bg-blue-100 text-blue-800'
                     }`}>
                       {isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role}
                     </span>
-                  ) : (
-                    <span className="inline-block opacity-0 text-sm font-medium px-3 py-1">
-                      Placeholder
-                    </span>
                   )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center justify-center lg:justify-end space-x-2">
-          {canUndo() && (
-            <button
-              onClick={undoBid}
-              className="btn-secondary flex items-center"
-              title="Undo last bid"
-            >
-              <Undo className="w-4 h-4 mr-2" />
-              Undo
-            </button>
-          )}
-
-          {auctionState.highestBid ? (
-            <button
-              onClick={handleSoldPlayer}
-              disabled={isShuffling}
-              className={`btn-success flex items-center transition-all duration-300 ${
-                isShuffling ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <Trophy className="w-4 h-4 mr-2" />
-              {isShuffling ? 'Shuffling...' : 'Sold'}
-            </button>
-          ) : (
-            <button
-              onClick={handleUnsoldPlayer}
-              disabled={isShuffling}
-              className={`btn-danger flex items-center transition-all duration-300 ${
-                isShuffling ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <SkipForward className="w-4 h-4 mr-2" />
-              {isShuffling ? 'Shuffling...' : 'Unsold'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Current Bid Status - Two Column Layout */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
-        <div className="grid grid-cols-2 gap-6 mb-4">
-          {/* Left Column: Bidder Info */}
-          <div className="flex flex-col justify-center min-h-[120px]">
-            <p className="text-sm font-medium mb-3 text-center">
-              {auctionState.highestBid && highestBiddingTeam ? (
-                <span className="text-blue-600">CURRENT HIGHEST BIDDER</span>
-              ) : (
-                <span className="text-gray-600">STARTING PRICE</span>
-              )}
-            </p>
-
-            {auctionState.highestBid && highestBiddingTeam ? (
-              <>
-                <div className="flex items-center justify-center mb-2">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4 shadow-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${highestBiddingTeam.primaryColor}, ${highestBiddingTeam.secondaryColor})`,
-                    }}
-                  >
-                    {highestBiddingTeam.logo}
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold text-gray-900">{highestBiddingTeam.name}</div>
-                    <div className="text-sm text-gray-600">
-                      Budget: {formatCurrency(highestBiddingTeam.remainingBudget)} remaining
-                    </div>
-                  </div>
+        {/* Desktop Layout */}
+        <div className="hidden lg:grid grid-cols-3 gap-6">
+          {/* Timer */}
+          <div className="flex items-center justify-start">
+            {tournament.settings.enableTimer ? (
+              <div className="inline-flex items-center bg-gradient-to-r from-red-500 to-orange-500 rounded-xl p-4 shadow-lg">
+                <Timer className="w-6 h-6 text-white mr-2" />
+                <div className="text-2xl font-bold text-white">
+                  {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
                 </div>
-                <div className="text-xs text-gray-600 text-center">
-                  Bid placed {new Date(auctionState.highestBid.timestamp).toLocaleTimeString()}
-                </div>
-              </>
+              </div>
             ) : (
-              <div className="flex items-center justify-center flex-1">
-                <div className="text-lg text-gray-600 text-center">No bids placed yet</div>
+              <div className="inline-flex items-center bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl p-4 shadow-lg">
+                <Timer className="w-6 h-6 text-white mr-2" />
+                <div className="text-lg font-medium text-white">
+                  No Timer
+                </div>
               </div>
             )}
           </div>
 
-          {/* Right Column: Price */}
-          <div className="text-center min-h-[120px] flex flex-col justify-center">
-            <p className={`text-sm font-medium mb-3 transition-all duration-200 ${
+          {/* Current Player Info or End Auction */}
+          <div className="text-center">
+            {allTeamsFull ? (
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                  All Teams Complete!
+                </h1>
+                <button
+                  onClick={() => setShowEndAuctionDialog(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center mx-auto"
+                >
+                  <Trophy className="w-5 h-5 mr-2" />
+                  End Auction
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-6">
+                {/* Player Image - Fixed Size */}
+                <div className="flex-shrink-0">
+                  <div className={`transition-all duration-200 ${isShuffling ? 'animate-pulse scale-105' : ''}`}>
+                    <PlayerImage
+                      key={isShuffling && shufflePlayer ? `shuffle-${shufflePlayer.id}-${shuffleCounter}` : `current-${currentPlayer?.id}`}
+                      imageUrl={isShuffling ? undefined : currentPlayer?.imageUrl}
+                      playerName={(isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name) || 'Unknown Player'}
+                      size="2xl"
+                      className={`shadow-lg border-4 ${isShuffling ? 'border-yellow-400 shadow-yellow-200' : 'border-white'} transition-all duration-200`}
+                    />
+                  </div>
+                </div>
+
+                {/* Player Info - Compact Layout */}
+                <div className="text-center w-80">
+                  {/* Shuffling Indicator */}
+                  {isShuffling && (
+                    <div className="mb-2">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium animate-bounce">
+                        🎲 Selecting Next Player...
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Player Name - Single Line */}
+                  <div className="flex items-center justify-center mb-4">
+                    <h1 className={`text-4xl font-bold leading-none whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 ${
+                      isShuffling ? 'text-yellow-600 animate-pulse' : 'text-gray-900'
+                    }`}>
+                      {isShuffling && shufflePlayer ? shufflePlayer.name : currentPlayer?.name}
+                    </h1>
+                  </div>
+
+                  {/* Player Role - Fixed Height */}
+                  <div className="h-8 flex items-center justify-center">
+                    {(isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role) ? (
+                      <span className={`inline-block text-sm font-medium px-3 py-1 rounded-full transition-all duration-200 ${
+                        isShuffling ? 'bg-yellow-100 text-yellow-800 animate-pulse' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {isShuffling && shufflePlayer ? shufflePlayer.role : currentPlayer?.role}
+                      </span>
+                    ) : (
+                      <span className="inline-block opacity-0 text-sm font-medium px-3 py-1">
+                        Placeholder
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center justify-end space-x-2">
+            {canUndo() && (
+              <button
+                onClick={undoBid}
+                className="btn-secondary flex items-center"
+                title="Undo last bid"
+              >
+                <Undo className="w-4 h-4 mr-2" />
+                Undo
+              </button>
+            )}
+
+            {auctionState.highestBid ? (
+              <button
+                onClick={handleSoldPlayer}
+                disabled={isShuffling}
+                className={`btn-success flex items-center transition-all duration-300 ${
+                  isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Trophy className="w-4 h-4 mr-2" />
+                {isShuffling ? 'Shuffling...' : 'Sold'}
+              </button>
+            ) : (
+              <button
+                onClick={handleUnsoldPlayer}
+                disabled={isShuffling}
+                className={`btn-danger flex items-center transition-all duration-300 ${
+                  isShuffling ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <SkipForward className="w-4 h-4 mr-2" />
+                {isShuffling ? 'Shuffling...' : 'Unsold'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Current Bid Status - Responsive Layout */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 md:p-6 border-2 border-blue-200">
+        {/* Mobile Layout */}
+        <div className="block md:hidden">
+          {/* Price Section - Top */}
+          <div className="text-center mb-4">
+            <p className={`text-xs font-medium mb-2 transition-all duration-200 ${
               auctionState.highestBid && highestBiddingTeam
                 ? 'text-blue-600'
                 : isShuffling
@@ -532,7 +621,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                   : 'BASE PRICE'
               }
             </p>
-            <div className={`text-5xl font-bold mb-2 transition-all duration-200 ${
+            <div className={`text-3xl font-bold mb-2 transition-all duration-200 ${
               auctionState.highestBid && highestBiddingTeam
                 ? 'text-blue-600'
                 : isShuffling
@@ -549,27 +638,158 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               )}
             </div>
           </div>
+
+          {/* Bidder Info - Bottom */}
+          {auctionState.highestBid && highestBiddingTeam ? (
+            <div className="text-center mb-4">
+              <p className="text-xs font-medium mb-2 text-blue-600">CURRENT HIGHEST BIDDER</p>
+              <div className="flex items-center justify-center">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3 shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${highestBiddingTeam.primaryColor}, ${highestBiddingTeam.secondaryColor})`,
+                  }}
+                >
+                  {highestBiddingTeam.logo}
+                </div>
+                <div className="text-left">
+                  <div className="text-lg font-bold text-gray-900">{highestBiddingTeam.name}</div>
+                  <div className="text-xs text-gray-600">
+                    Budget: {formatCurrency(highestBiddingTeam.remainingBudget)} remaining
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-600 mt-2">
+                Bid placed {new Date(auctionState.highestBid.timestamp).toLocaleTimeString()}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center mb-4">
+              <p className="text-xs font-medium mb-2 text-gray-600">STARTING PRICE</p>
+              <div className="text-sm text-gray-600">No bids placed yet</div>
+            </div>
+          )}
+
+          {/* Stats Row - Mobile */}
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-blue-200">
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">MIN BID</p>
+              <div className="text-sm font-bold text-green-600">
+                {formatCurrency(minBid)}
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">INCREMENT</p>
+              <div className="text-sm font-bold text-orange-600">
+                {formatCurrency(settings.bidIncrement)}
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">ELIGIBLE</p>
+              <div className="text-sm font-bold text-purple-600">
+                {eligibleTeams.length} / {tournament.teams.length}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-blue-200">
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">MINIMUM NEXT BID</p>
-            <div className="text-lg font-bold text-green-600">
-              {formatCurrency(minBid)}
+        {/* Desktop Layout */}
+        <div className="hidden md:block">
+          <div className="grid grid-cols-2 gap-6 mb-4">
+            {/* Left Column: Bidder Info */}
+            <div className="flex flex-col justify-center min-h-[120px]">
+              <p className="text-sm font-medium mb-3 text-center">
+                {auctionState.highestBid && highestBiddingTeam ? (
+                  <span className="text-blue-600">CURRENT HIGHEST BIDDER</span>
+                ) : (
+                  <span className="text-gray-600">STARTING PRICE</span>
+                )}
+              </p>
+
+              {auctionState.highestBid && highestBiddingTeam ? (
+                <>
+                  <div className="flex items-center justify-center mb-2">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold mr-4 shadow-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${highestBiddingTeam.primaryColor}, ${highestBiddingTeam.secondaryColor})`,
+                      }}
+                    >
+                      {highestBiddingTeam.logo}
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-gray-900">{highestBiddingTeam.name}</div>
+                      <div className="text-sm text-gray-600">
+                        Budget: {formatCurrency(highestBiddingTeam.remainingBudget)} remaining
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 text-center">
+                    Bid placed {new Date(auctionState.highestBid.timestamp).toLocaleTimeString()}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center flex-1">
+                  <div className="text-lg text-gray-600 text-center">No bids placed yet</div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Price */}
+            <div className="text-center min-h-[120px] flex flex-col justify-center">
+              <p className={`text-sm font-medium mb-3 transition-all duration-200 ${
+                auctionState.highestBid && highestBiddingTeam
+                  ? 'text-blue-600'
+                  : isShuffling
+                    ? 'text-yellow-600'
+                    : 'text-gray-600'
+              }`}>
+                {auctionState.highestBid && highestBiddingTeam
+                  ? 'CURRENT BID'
+                  : isShuffling
+                    ? 'SHUFFLING...'
+                    : 'BASE PRICE'
+                }
+              </p>
+              <div className={`text-5xl font-bold mb-2 transition-all duration-200 ${
+                auctionState.highestBid && highestBiddingTeam
+                  ? 'text-blue-600'
+                  : isShuffling
+                    ? 'text-yellow-600 animate-pulse'
+                    : 'text-gray-900'
+              }`}>
+                {auctionState.highestBid && highestBiddingTeam ? (
+                  formatCurrency(auctionState.highestBid.amount)
+                ) : (
+                  formatCurrency(
+                    (isShuffling && shufflePlayer ? shufflePlayer.basePrice : currentPlayer?.basePrice) ||
+                    tournament?.settings.minimumBid || 100
+                  )
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">BID INCREMENT</p>
-            <div className="text-lg font-bold text-orange-600">
-              {formatCurrency(settings.bidIncrement)}
+          <div className="flex items-center justify-between pt-4 border-t border-blue-200">
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">MINIMUM NEXT BID</p>
+              <div className="text-lg font-bold text-green-600">
+                {formatCurrency(minBid)}
+              </div>
             </div>
-          </div>
 
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">ELIGIBLE TEAMS</p>
-            <div className="text-lg font-bold text-purple-600">
-              {eligibleTeams.length} / {tournament.teams.length}
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">BID INCREMENT</p>
+              <div className="text-lg font-bold text-orange-600">
+                {formatCurrency(settings.bidIncrement)}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">ELIGIBLE TEAMS</p>
+              <div className="text-lg font-bold text-purple-600">
+                {eligibleTeams.length} / {tournament.teams.length}
+              </div>
             </div>
           </div>
         </div>
@@ -579,7 +799,89 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
       <div className={`bg-white rounded-xl shadow-lg border-2 border-blue-100 p-4 transition-all duration-300 ${
         isShuffling ? 'opacity-50 pointer-events-none' : ''
       }`}>
-        <div className="flex items-center justify-between mb-3">
+        {/* Mobile Header */}
+        <div className="block md:hidden mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-bold text-gray-900">Place Your Bid</h2>
+            <div className="text-xs text-gray-600">
+              Min: <span className="font-semibold text-green-600">{formatCurrency(minBid)}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {/* Share Auction Button */}
+              {!sharingState.isSharing ? (
+                <button
+                  onClick={handleStartSharing}
+                  disabled={sharingState.isLoading}
+                  className="flex items-center text-xs text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                  title="Share auction live with others"
+                >
+                  <Share2 className="w-3 h-3 mr-1" />
+                  <span>{sharingState.isLoading ? 'Sharing...' : 'Share'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowShareDialog(true)}
+                  className="flex items-center text-xs text-green-600 hover:text-green-800 transition-colors px-2 py-1 rounded border border-green-200 bg-green-50"
+                  title="Auction is being shared live"
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  <span>Live ({sharingState.viewerCount})</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="flex items-center text-xs text-purple-600 hover:text-purple-800 transition-colors px-2 py-1 rounded border border-purple-200 hover:bg-purple-50"
+                title="Save auction progress"
+              >
+                <Save className="w-3 h-3 mr-1" />
+                <span>Save</span>
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowEndAuctionDialog(true)}
+                className="flex items-center text-xs text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded border border-red-200 hover:bg-red-50"
+                title="Manually end the auction"
+              >
+                <Trophy className="w-3 h-3 mr-1" />
+                <span>End</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (allTeamsExpanded === true) {
+                    setAllTeamsExpanded(false); // Collapse all
+                  } else {
+                    setAllTeamsExpanded(true); // Expand all
+                  }
+                }}
+                className="flex items-center text-xs text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                {allTeamsExpanded === true ? (
+                  <>
+                    <span className="mr-1">Collapse</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-1">Expand</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900">Place Your Bid</h2>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-600">

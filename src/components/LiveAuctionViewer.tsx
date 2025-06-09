@@ -244,35 +244,74 @@ const LiveAuctionViewer: React.FC = () => {
 
       {/* Header - Compact */}
       <div className="bg-white shadow-sm border-b border-gray-200 p-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Live Auction</h1>
-            <p className="text-sm text-gray-600">Watching as {viewerName}</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center text-sm text-blue-600">
-              <Eye className="w-4 h-4 mr-1" />
-              {viewerCount} watching
-            </div>
-            <div className={`flex items-center text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-              {isConnected ? <Wifi className="w-4 h-4 mr-1" /> : <WifiOff className="w-4 h-4 mr-1" />}
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </div>
-            {lastUpdated && (
-              <div className="flex items-center text-sm text-gray-500">
-                <Clock className="w-4 h-4 mr-1" />
-                Updated {lastUpdated.toLocaleTimeString()}
+        <div className="max-w-7xl mx-auto">
+          {/* Mobile Header */}
+          <div className="block md:hidden">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Live Auction</h1>
+                <p className="text-xs text-gray-600">Watching as {viewerName}</p>
               </div>
-            )}
+              <button
+                onClick={handleRefresh}
+                className="flex items-center text-xs text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                title="Refresh connection"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center text-blue-600">
+                  <Eye className="w-3 h-3 mr-1" />
+                  {viewerCount}
+                </div>
+                <div className={`flex items-center ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                  {isConnected ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
+                  {isConnected ? 'Connected' : 'Disconnected'}
+                </div>
+              </div>
+              {lastUpdated && (
+                <div className="flex items-center text-gray-500">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {lastUpdated.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          </div>
 
-            <button
-              onClick={handleRefresh}
-              className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
-              title="Refresh connection"
-            >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Refresh
-            </button>
+          {/* Desktop Header */}
+          <div className="hidden md:flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Live Auction</h1>
+              <p className="text-sm text-gray-600">Watching as {viewerName}</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center text-sm text-blue-600">
+                <Eye className="w-4 h-4 mr-1" />
+                {viewerCount} watching
+              </div>
+              <div className={`flex items-center text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                {isConnected ? <Wifi className="w-4 h-4 mr-1" /> : <WifiOff className="w-4 h-4 mr-1" />}
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </div>
+              {lastUpdated && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <Clock className="w-4 h-4 mr-1" />
+                  Updated {lastUpdated.toLocaleTimeString()}
+                </div>
+              )}
+
+              <button
+                onClick={handleRefresh}
+                className="flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                title="Refresh connection"
+              >
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -293,67 +332,138 @@ const LiveAuctionViewer: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between w-full">
-                {/* Bid Information - Far Left */}
-                <div className="text-left flex-shrink-0">
-                  {displayBid ? (
-                    <div>
-                      <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
-                      <div className="text-3xl font-bold text-blue-600">
-                        {showPrices ? formatCurrency(displayBid.amount) : '***'}
+                <div className="w-full">
+                  {/* Mobile Layout */}
+                  <div className="block md:hidden">
+                    {/* Player Info - Top */}
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="flex-shrink-0">
+                        <PlayerImage
+                          key={`live-player-${currentPlayer?.id}-${tournament.currentPlayerIndex}`}
+                          imageUrl={currentPlayer?.imageUrl}
+                          playerName={currentPlayer?.name || 'Unknown Player'}
+                          size="lg"
+                          className="shadow-md"
+                        />
                       </div>
-                      <p className="text-sm text-gray-600">
-                        by {displayTeams?.find(t => t.id === displayBid?.teamId)?.name || 'Unknown Team'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
-                      <div className="text-3xl font-bold text-gray-900">
-                        {showPrices ? formatCurrency(currentPlayer?.basePrice || tournament.settings?.minimumBid || 100) : '***'}
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-xl font-semibold text-gray-900 truncate">
+                          {currentPlayer?.name || 'Unknown Player'}
+                        </h2>
+                        {currentPlayer?.role && (
+                          <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
+                            {currentPlayer.role}
+                          </span>
+                        )}
+                        <div className="mt-2 text-sm text-gray-500">
+                          Player {(tournament.currentPlayerIndex || 0) + 1} of {tournament.players?.length || 0}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Player Info - Centered */}
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                  <div className="flex-shrink-0">
-                    <PlayerImage
-                      key={`live-player-${currentPlayer?.id}-${tournament.currentPlayerIndex}`}
-                      imageUrl={currentPlayer?.imageUrl}
-                      playerName={currentPlayer?.name || 'Unknown Player'}
-                      size="xl"
-                      className="shadow-md"
-                    />
-                  </div>
-                  <div className="text-center">
-                    <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
-                      {currentPlayer?.name || 'Unknown Player'}
-                    </h2>
-                    {currentPlayer?.role && (
-                      <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
-                        {currentPlayer.role}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                    {/* Bid Information - Bottom */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-left">
+                        {displayBid ? (
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium">CURRENT BID</p>
+                            <div className="text-2xl font-bold text-blue-600">
+                              {showPrices ? formatCurrency(displayBid.amount) : '***'}
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              by {displayTeams?.find(t => t.id === displayBid?.teamId)?.name || 'Unknown Team'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium">BASE PRICE</p>
+                            <div className="text-2xl font-bold text-gray-900">
+                              {showPrices ? formatCurrency(currentPlayer?.basePrice || tournament.settings?.minimumBid || 100) : '***'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                {/* Progress Indicator - Far Right */}
-                <div className="text-right flex-shrink-0">
-                  <div className="text-lg font-bold text-gray-700">
-                    {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                      {/* Progress Bar - Mobile */}
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                        </div>
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">Players</div>
-                  <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
-                      }}
-                    />
+
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex items-center justify-between w-full">
+                    {/* Bid Information - Far Left */}
+                    <div className="text-left flex-shrink-0">
+                      {displayBid ? (
+                        <div>
+                          <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
+                          <div className="text-3xl font-bold text-blue-600">
+                            {showPrices ? formatCurrency(displayBid.amount) : '***'}
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            by {displayTeams?.find(t => t.id === displayBid?.teamId)?.name || 'Unknown Team'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
+                          <div className="text-3xl font-bold text-gray-900">
+                            {showPrices ? formatCurrency(currentPlayer?.basePrice || tournament.settings?.minimumBid || 100) : '***'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Player Info - Centered */}
+                    <div className="flex items-center space-x-4 flex-shrink-0">
+                      <div className="flex-shrink-0">
+                        <PlayerImage
+                          key={`live-player-${currentPlayer?.id}-${tournament.currentPlayerIndex}`}
+                          imageUrl={currentPlayer?.imageUrl}
+                          playerName={currentPlayer?.name || 'Unknown Player'}
+                          size="xl"
+                          className="shadow-md"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
+                          {currentPlayer?.name || 'Unknown Player'}
+                        </h2>
+                        {currentPlayer?.role && (
+                          <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
+                            {currentPlayer.role}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Indicator - Far Right */}
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-lg font-bold text-gray-700">
+                        {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                      </div>
+                      <div className="text-sm text-gray-500">Players</div>
+                      <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
                 </div>
               )}
             </div>
@@ -436,19 +546,19 @@ const LiveAuctionViewer: React.FC = () => {
         </div>
 
         {/* Remaining Players */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-3 md:p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">Remaining Players</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900">Remaining Players</h3>
             <div className="text-right">
-              <div className="text-lg font-bold text-orange-600">
+              <div className="text-base md:text-lg font-bold text-orange-600">
                 {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length}
               </div>
-              <div className="text-sm text-gray-500">Left</div>
+              <div className="text-xs md:text-sm text-gray-500">Left</div>
             </div>
           </div>
 
           {tournament.players.filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold)).length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 max-h-64 overflow-y-auto">
               {tournament.players
                 .filter(p => !p.soldPrice && (tournament.players.indexOf(p) > tournament.currentPlayerIndex || p.isUnsold))
                 .sort((a, b) => {
@@ -471,7 +581,7 @@ const LiveAuctionViewer: React.FC = () => {
                   const showUnsoldStyling = isUnsold && shouldShowUnsoldStatus;
 
                   return (
-                    <div key={player.id} className={`flex items-center justify-between text-sm rounded-lg p-2 ${
+                    <div key={player.id} className={`flex items-center justify-between text-xs md:text-sm rounded-lg p-2 ${
                       showUnsoldStyling ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
                     }`}>
                       <div className="flex items-center min-w-0 flex-1">
