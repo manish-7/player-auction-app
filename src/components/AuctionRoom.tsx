@@ -58,7 +58,7 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
   const { toasts, removeToast, success, warning } = useToast();
 
   // Auction sharing hook
-  const { sharingState, startSharing, stopSharing, copyShareUrl } = useAuctionSharing();
+  const { sharingState, startSharing, stopSharing, copyShareUrl, syncAuctionState } = useAuctionSharing();
 
   const currentPlayer = getCurrentPlayer();
   const eligibleTeams = getEligibleTeams();
@@ -189,6 +189,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
     // Mark player as sold but don't advance yet
     markPlayerSold();
 
+    // Sync shuffling state to live viewers
+    syncAuctionState(true);
+
     // Start shuffling animation which will advance to next player when complete
     setTimeout(() => {
       startPlayerShuffle();
@@ -212,6 +215,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
     // Mark player as unsold but don't advance yet
     markPlayerUnsold();
+
+    // Sync shuffling state to live viewers
+    syncAuctionState(true);
 
     // Start shuffling animation which will advance to next player when complete
     setTimeout(() => {
@@ -295,6 +301,9 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
 
       // Now advance to the next player
       advanceToNextPlayer();
+
+      // Sync that shuffling has ended
+      syncAuctionState(false);
 
       setTimer(tournament?.settings.timerDuration || 30);
     }, 2000);

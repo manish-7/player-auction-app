@@ -123,15 +123,16 @@ export const useAuctionSharing = () => {
   /**
    * Update shared auction when local state changes
    */
-  const syncAuctionState = useCallback(async () => {
+  const syncAuctionState = useCallback(async (isShuffling?: boolean) => {
     if (!sharingState.isSharing || !tournament || !auctionState) return;
 
     try {
       console.log('Syncing auction state to Firebase...', {
         currentPlayer: tournament.currentPlayerIndex,
-        highestBid: auctionState.highestBid
+        highestBid: auctionState.highestBid,
+        isShuffling
       });
-      await auctionSharingService.updateSharedAuction(tournament, auctionState);
+      await auctionSharingService.updateSharedAuction(tournament, auctionState, isShuffling);
       console.log('Auction state synced successfully');
     } catch (error) {
       console.error('Failed to sync auction state:', error);

@@ -5,6 +5,7 @@ import type { Tournament, AuctionState } from '../types';
 export interface SharedAuctionData {
   tournament: Tournament;
   auctionState: AuctionState;
+  isShuffling?: boolean;
   lastUpdated: any;
   isActive: boolean;
   createdBy: string;
@@ -63,7 +64,7 @@ export class AuctionSharingService {
   /**
    * Update shared auction with new state
    */
-  async updateSharedAuction(tournament: Tournament, auctionState: AuctionState): Promise<void> {
+  async updateSharedAuction(tournament: Tournament, auctionState: AuctionState, isShuffling?: boolean): Promise<void> {
     if (!this.currentAuctionId) {
       console.warn('No current auction ID, cannot update');
       return;
@@ -71,17 +72,23 @@ export class AuctionSharingService {
 
     try {
       const auctionRef = ref(database, `shared-auctions/${this.currentAuctionId}`);
-      const updateData = {
+      const updateData: any = {
         tournament: this.sanitizeTournamentForSharing(tournament),
         auctionState: this.sanitizeAuctionStateForSharing(auctionState),
         lastUpdated: serverTimestamp(),
         isActive: true,
       };
 
+      // Add shuffling state if provided
+      if (isShuffling !== undefined) {
+        updateData.isShuffling = isShuffling;
+      }
+
       console.log('Updating Firebase with data:', {
         auctionId: this.currentAuctionId,
         currentPlayer: tournament.currentPlayerIndex,
-        highestBid: auctionState.highestBid
+        highestBid: auctionState.highestBid,
+        isShuffling
       });
 
       await update(auctionRef, updateData);

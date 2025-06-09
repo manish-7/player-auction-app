@@ -219,8 +219,16 @@ const LiveAuctionViewer: React.FC = () => {
     );
   }
 
-  const { tournament, auctionState } = auctionData;
+  const { tournament, auctionState, isShuffling } = auctionData;
   const currentPlayer = tournament.players && tournament.players[tournament.currentPlayerIndex];
+
+  // When shuffling, keep showing the previous bid info to maintain consistency
+  const shouldShowPreviousBid = isShuffling && previousDataRef.current &&
+    previousDataRef.current.auctionState.highestBid !== null;
+
+  // Use previous bid info if shuffling, otherwise use current
+  const displayBid = shouldShowPreviousBid ? previousDataRef.current!.auctionState.highestBid : auctionState.highestBid;
+  const displayTeams = shouldShowPreviousBid ? previousDataRef.current!.tournament.teams : tournament.teams;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -277,67 +285,80 @@ const LiveAuctionViewer: React.FC = () => {
         {/* Current Player or Completion Status */}
         {currentPlayer ? (
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              {/* Bid Information - Far Left */}
-              <div className="text-left flex-shrink-0">
-                {auctionState.highestBid ? (
-                  <div>
-                    <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {showPrices ? formatCurrency(auctionState.highestBid.amount) : '***'}
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      by {tournament.teams?.find(t => t.id === auctionState.highestBid?.teamId)?.name || 'Unknown Team'}
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
-                    <div className="text-3xl font-bold text-gray-900">
-                      {showPrices ? formatCurrency(currentPlayer.basePrice || tournament.settings.minimumBid) : '***'}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Player Info - Centered */}
-              <div className="flex items-center space-x-4 flex-shrink-0">
-                <div className="flex-shrink-0">
-                  <PlayerImage
-                    imageUrl={currentPlayer.imageUrl}
-                    playerName={currentPlayer.name}
-                    size="xl"
-                    className="shadow-md"
-                  />
-                </div>
+            {isShuffling ? (
+              /* Shuffling State - Show shuffling indicator */
+              <div className="flex items-center justify-center py-8">
                 <div className="text-center">
-                  <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
-                    {currentPlayer.name}
-                  </h2>
-                  {currentPlayer.role && (
-                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
-                      {currentPlayer.role}
-                    </span>
+                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-lg font-medium animate-bounce mb-2">
+                    🎲 Selecting Next Player...
+                  </div>
+                  <p className="text-sm text-gray-600">Please wait while the next player is being selected</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                {/* Bid Information - Far Left */}
+                <div className="text-left flex-shrink-0">
+                  {displayBid ? (
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">CURRENT BID</p>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {showPrices ? formatCurrency(displayBid.amount) : '***'}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        by {displayTeams?.find(t => t.id === displayBid?.teamId)?.name || 'Unknown Team'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">BASE PRICE</p>
+                      <div className="text-3xl font-bold text-gray-900">
+                        {showPrices ? formatCurrency(currentPlayer?.basePrice || tournament.settings?.minimumBid || 100) : '***'}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Progress Indicator - Far Right */}
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-bold text-gray-700">
-                  {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                {/* Player Info - Centered */}
+                <div className="flex items-center space-x-4 flex-shrink-0">
+                  <div className="flex-shrink-0">
+                    <PlayerImage
+                      key={`live-player-${currentPlayer?.id}-${tournament.currentPlayerIndex}`}
+                      imageUrl={currentPlayer?.imageUrl}
+                      playerName={currentPlayer?.name || 'Unknown Player'}
+                      size="xl"
+                      className="shadow-md"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <h2 className="text-2xl font-semibold text-gray-900 whitespace-nowrap">
+                      {currentPlayer?.name || 'Unknown Player'}
+                    </h2>
+                    {currentPlayer?.role && (
+                      <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded-full mt-1">
+                        {currentPlayer.role}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500">Players</div>
-                <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
-                    }}
-                  />
+
+                {/* Progress Indicator - Far Right */}
+                <div className="text-right flex-shrink-0">
+                  <div className="text-lg font-bold text-gray-700">
+                    {(tournament.currentPlayerIndex || 0) + 1} / {tournament.players?.length || 0}
+                  </div>
+                  <div className="text-sm text-gray-500">Players</div>
+                  <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${tournament.players?.length ? (((tournament.currentPlayerIndex || 0) + 1) / tournament.players.length) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           /* Auction Completed Banner */
@@ -367,7 +388,7 @@ const LiveAuctionViewer: React.FC = () => {
           <div className="team-grid">
             {tournament.teams && tournament.teams.length > 0 ? (
               tournament.teams.map((team) => {
-                const isHighestBidder = auctionState.highestBid?.teamId === team.id;
+                const isHighestBidder = displayBid?.teamId === team.id;
 
                 // Ensure team has required properties
                 const safeTeam = {
@@ -380,7 +401,7 @@ const LiveAuctionViewer: React.FC = () => {
                 // Calculate minBid for display purposes
                 const currentPlayerForBid = tournament.players && tournament.players[tournament.currentPlayerIndex];
                 const basePrice = currentPlayerForBid ? (currentPlayerForBid.basePrice || tournament.settings?.minimumBid || 100) : 100;
-                const currentBid = auctionState.highestBid?.amount || 0;
+                const currentBid = displayBid?.amount || 0;
                 const minBid = Math.max(basePrice, currentBid + (tournament.settings?.minimumBid || 100));
 
                 // For live viewer, calculate eligibility to show proper status messages
