@@ -375,10 +375,10 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               {canUndo() && (
                 <button
                   onClick={undoBid}
-                  className="btn-secondary flex items-center text-sm py-1 px-2"
+                  className="btn-secondary flex items-center text-sm md:text-base py-2 md:py-3 px-3 md:px-4"
                   title="Undo last bid"
                 >
-                  <Undo className="w-3 h-3 mr-1" />
+                  <Undo className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                   Undo
                 </button>
               )}
@@ -387,22 +387,22 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
                 <button
                   onClick={handleSoldPlayer}
                   disabled={isShuffling}
-                  className={`btn-success flex items-center text-sm py-1 px-2 transition-all duration-300 ${
+                  className={`btn-success flex items-center text-sm md:text-base py-2 md:py-3 px-3 md:px-4 transition-all duration-300 ${
                     isShuffling ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  <Trophy className="w-3 h-3 mr-1" />
+                  <Trophy className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                   {isShuffling ? 'Shuffling...' : 'Sold'}
                 </button>
               ) : (
                 <button
                   onClick={handleUnsoldPlayer}
                   disabled={isShuffling}
-                  className={`btn-danger flex items-center text-sm py-1 px-2 transition-all duration-300 ${
+                  className={`btn-danger flex items-center text-sm md:text-base py-2 md:py-3 px-3 md:px-4 transition-all duration-300 ${
                     isShuffling ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  <SkipForward className="w-3 h-3 mr-1" />
+                  <SkipForward className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                   {isShuffling ? 'Shuffling...' : 'Unsold'}
                 </button>
               )}
@@ -562,14 +562,14 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center justify-end space-x-2">
+          <div className="flex items-center justify-end space-x-3">
             {canUndo() && (
               <button
                 onClick={undoBid}
-                className="btn-secondary flex items-center"
+                className="btn-secondary flex items-center py-3 px-4 text-base"
                 title="Undo last bid"
               >
-                <Undo className="w-4 h-4 mr-2" />
+                <Undo className="w-5 h-5 mr-2" />
                 Undo
               </button>
             )}
@@ -578,22 +578,22 @@ const AuctionRoom: React.FC<AuctionRoomProps> = ({ onComplete }) => {
               <button
                 onClick={handleSoldPlayer}
                 disabled={isShuffling}
-                className={`btn-success flex items-center transition-all duration-300 ${
+                className={`btn-success flex items-center py-3 px-6 text-base font-semibold transition-all duration-300 ${
                   isShuffling ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                <Trophy className="w-4 h-4 mr-2" />
+                <Trophy className="w-5 h-5 mr-2" />
                 {isShuffling ? 'Shuffling...' : 'Sold'}
               </button>
             ) : (
               <button
                 onClick={handleUnsoldPlayer}
                 disabled={isShuffling}
-                className={`btn-danger flex items-center transition-all duration-300 ${
+                className={`btn-danger flex items-center py-3 px-6 text-base font-semibold transition-all duration-300 ${
                   isShuffling ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                <SkipForward className="w-4 h-4 mr-2" />
+                <SkipForward className="w-5 h-5 mr-2" />
                 {isShuffling ? 'Shuffling...' : 'Unsold'}
               </button>
             )}
