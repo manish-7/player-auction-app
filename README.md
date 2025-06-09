@@ -12,7 +12,8 @@ A comprehensive React-based application for conducting IPL-style cricket player 
 - **Live Auction Sharing**: Share auctions in real-time with multiple viewers via unique links
 - **Comprehensive Dashboard**: Detailed results, statistics, and team compositions
 - **Export Results**: Download auction results in Excel format
-- **Price Visibility Control**: Toggle to hide/show prices for privacy or presentation
+- **Price Visibility Control**: Configure default price visibility for shared auction links
+- **Enhanced Player Display**: Visual player cards with images in all sections
 
 ### 🎯 Key Capabilities
 - ✅ Tournament setup with configurable parameters and quick budget options
@@ -25,18 +26,20 @@ A comprehensive React-based application for conducting IPL-style cricket player 
 - ✅ Player image display with caching and placeholder support
 - ✅ Configurable bid increments and minimum bid amounts
 - ✅ Currency formatting with shortened display (e.g., "31cr")
-- ✅ Price visibility toggle for both live auction and results
+- ✅ Configurable price visibility for shared auction links
+- ✅ Enhanced remaining players display with images and smart sorting
 - ✅ Comprehensive statistics and analytics
 - ✅ Export functionality for results
 - ✅ Responsive design for all devices
 
 ### 🔥 Advanced Features
-- **Live Sharing**: Real-time auction viewing with Firebase integration
-- **Player Images**: Visual player cards with image caching
+- **Live Sharing**: Real-time auction viewing with Firebase integration and configurable price visibility
+- **Player Images**: Visual player cards with image caching throughout the application
 - **Smart Bidding**: Quick bid buttons and intelligent bid validation
 - **Enhanced UX**: Compact team cards, better layouts, and improved navigation
 - **Auction Control**: Manual end auction, undo functionality, and better flow
-- **Privacy Options**: Hide/show prices for different viewing scenarios
+- **Privacy Options**: Manager-controlled price visibility for shared auction links
+- **Visual Player Tracking**: Player images in remaining players section with smart sorting
 
 ## 🚀 Getting Started
 
@@ -100,6 +103,9 @@ npm run deploy
 2. Select number of teams (2-16)
 3. Set players per team (5-25)
 4. Configure team budget (recommended: ₹100 Crores)
+5. Set minimum bid and bid increment amounts
+6. Configure auction timer settings (optional)
+7. Choose price visibility for shared auction links
 
 ### Step 2: Player Inventory
 1. Download the sample Excel file to see the required format
@@ -132,8 +138,8 @@ npm run deploy
    - Undo last bid if needed
    - Manual end auction with confirmation
 6. **Team Status**: Monitor budgets, player counts, and eligibility
-7. **Live Sharing**: Generate shareable links for real-time viewing
-8. **Privacy Controls**: Toggle price visibility on/off
+7. **Live Sharing**: Generate shareable links for real-time viewing with configurable price visibility
+8. **Remaining Players**: Visual display with player images, smart sorting, and complete visibility
 
 ### Step 5: Results Dashboard
 1. **Team Squads**: View complete team compositions with player images
@@ -150,7 +156,8 @@ npm run deploy
 4. **Viewer Management**: See how many people are watching
 5. **Connection Status**: Monitor Firebase connection and viewer status
 6. **Completion Indicator**: Clear display when auction is finished
-7. **Privacy Options**: Hide/show prices for viewers
+7. **Price Visibility**: Controlled by tournament setup - viewers see consistent experience
+8. **Enhanced Display**: Player images in remaining players section with smart organization
 
 ## 📊 Excel File Format
 
@@ -250,6 +257,7 @@ src/
 - **Default Budget**: ₹100 Crores per team (with quick budget options)
 - **Minimum Bid**: Configurable, supports amounts as low as ₹1
 - **Quick Budget Options**: 1000, 5000, 10000, 50000, 100000, 1000000
+- **Price Visibility**: Configure default visibility for shared auction links
 
 ### Constraints
 - Minimum 2 teams, maximum 16 teams
@@ -283,6 +291,8 @@ src/
 - Automatic viewer count tracking
 - Real-time bid updates and player transitions
 - Auction completion notifications
+- Manager-controlled price visibility settings
+- Enhanced player display with images and smart sorting
 
 ### Data Management
 - Excel file parsing and validation with enhanced error handling
@@ -293,13 +303,15 @@ src/
 - Unsold player randomization for fair re-auctioning
 
 ### Enhanced User Experience
-- Player images throughout the application
-- Compact and clean team card designs
+- Player images throughout the application including remaining players section
+- Compact and clean team card designs with reduced clutter
 - Responsive layouts optimized for all devices
-- Toast notifications for important events
+- Toast notifications for important events (respecting price visibility settings)
 - Custom modal dialogs for better UX
-- Price visibility toggle for privacy/presentation modes
+- Manager-controlled price visibility for shared auction links
 - Improved navigation and visual feedback
+- Smart player organization with unsold players clearly marked
+- Complete remaining players visibility without truncation
 
 ### Analytics
 - Team-wise spending analysis with visual indicators
@@ -382,14 +394,16 @@ To enable live auction sharing, you'll need to set up Firebase:
 - Choose quick budget options
 
 ### Display Preferences
-- Toggle price visibility for different scenarios
-- Customize currency formatting
+- Configure default price visibility for shared auction links
+- Customize currency formatting with shortened display options
 - Adjust player image sizes and layouts
 - Configure notification preferences
+- Control remaining players display with complete visibility
+- Smart player organization with visual status indicators
 
 ## 🆘 Support
 
-For issues or questions:
+For issues or questions, contact: **[manish.rokks@gmail.com](mailto:manish.rokks@gmail.com)**
 1. **Common Issues**:
    - Check the browser console for error messages
    - Ensure Excel file format matches the required structure
@@ -409,6 +423,16 @@ For issues or questions:
    - Use modern browsers for best experience
 
 ## 🔄 Recent Updates
+
+### Version 2.1 Features
+- ✅ Configurable price visibility for shared auction links
+- ✅ Enhanced remaining players display with player images
+- ✅ Smart player organization (upcoming first, unsold last)
+- ✅ Randomized remaining players order for strategic uncertainty
+- ✅ Complete remaining players visibility (no truncation)
+- ✅ Removed player index numbers from UI for cleaner appearance
+- ✅ Toast notifications respect price visibility settings
+- ✅ Improved live viewer experience with consistent price control
 
 ### Version 2.0 Features
 - ✅ Live auction sharing with Firebase

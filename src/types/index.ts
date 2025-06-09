@@ -46,6 +46,7 @@ export interface TournamentSettings {
   minimumBid: number; // minimum bid amount
   bidIncrement: number; // bid increment amount
   hidePricesInLiveView: boolean; // hide prices in shared live auction view
+  hideUnsoldStatusInLiveView: boolean; // hide unsold player status in shared live auction view
 }
 
 export interface AuctionConstraints {

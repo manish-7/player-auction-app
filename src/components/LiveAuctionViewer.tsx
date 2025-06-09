@@ -465,10 +465,12 @@ const LiveAuctionViewer: React.FC = () => {
                 })
                 .map((player) => {
                   const isUnsold = player.isUnsold;
+                  const shouldShowUnsoldStatus = !tournament.settings?.hideUnsoldStatusInLiveView;
+                  const showUnsoldStyling = isUnsold && shouldShowUnsoldStatus;
 
                   return (
                     <div key={player.id} className={`flex items-center justify-between text-sm rounded-lg p-2 ${
-                      isUnsold ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                      showUnsoldStyling ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
                     }`}>
                       <div className="flex items-center min-w-0 flex-1">
                         <div className="flex-shrink-0 mr-2">
@@ -481,7 +483,7 @@ const LiveAuctionViewer: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center space-x-1">
-                            {isUnsold && (
+                            {isUnsold && shouldShowUnsoldStatus && (
                               <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-yellow-200 text-yellow-800">
                                 UNSOLD
                               </span>

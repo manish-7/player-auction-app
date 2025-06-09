@@ -14,6 +14,7 @@ interface TournamentFormData {
   enableTimer: boolean;
   timerDuration: number;
   hidePricesInLiveView: boolean;
+  hideUnsoldStatusInLiveView: boolean;
 }
 
 interface TournamentSetupProps {
@@ -41,6 +42,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
       enableTimer: false,
       timerDuration: 30,
       hidePricesInLiveView: false,
+      hideUnsoldStatusInLiveView: true, // Default to hiding unsold status for cleaner live view
     },
   });
 
@@ -99,6 +101,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
         minimumBid: Number(data.minimumBid),
         bidIncrement: Number(data.bidIncrement),
         hidePricesInLiveView: data.hidePricesInLiveView,
+        hideUnsoldStatusInLiveView: data.hideUnsoldStatusInLiveView,
       },
     });
     onNext();
@@ -400,22 +403,45 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ onNext }) => {
             )}
           </div>
 
-          {/* Live View Price Visibility Setting */}
-          <div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="hidePricesInLiveView"
-                {...register('hidePricesInLiveView')}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="hidePricesInLiveView" className="ml-2 block text-sm text-gray-900">
-                Hide prices in shared live auction view
-              </label>
+          {/* Live View Settings */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-gray-900">Live Auction Sharing Settings</h4>
+
+            {/* Price Visibility Setting */}
+            <div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="hidePricesInLiveView"
+                  {...register('hidePricesInLiveView')}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="hidePricesInLiveView" className="ml-2 block text-sm text-gray-900">
+                  Hide prices in shared live auction view
+                </label>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                When enabled, prices will be hidden in the shared live auction link for privacy.
+              </p>
             </div>
-            <p className="mt-1 text-sm text-gray-500">
-              When enabled, prices will be hidden by default in the shared live auction link. Viewers can still toggle price visibility manually.
-            </p>
+
+            {/* Unsold Status Visibility Setting */}
+            <div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="hideUnsoldStatusInLiveView"
+                  {...register('hideUnsoldStatusInLiveView')}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="hideUnsoldStatusInLiveView" className="ml-2 block text-sm text-gray-900">
+                  Hide unsold player status in shared live auction view
+                </label>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                When enabled, unsold players will appear as regular players without special marking in the live view.
+              </p>
+            </div>
           </div>
 
           {/* Submit Button */}

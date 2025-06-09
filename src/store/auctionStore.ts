@@ -148,6 +148,7 @@ export const useAuctionStore = create<AuctionStore>()(
           minimumBid: 100,
           bidIncrement: 100, // Default bid increment same as minimum bid
           hidePricesInLiveView: false,
+          hideUnsoldStatusInLiveView: true, // Default to hiding unsold status for cleaner live view
         };
 
         const tournament: Tournament = {

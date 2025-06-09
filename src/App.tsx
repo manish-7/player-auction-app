@@ -395,7 +395,15 @@ function App() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="text-center text-sm text-gray-500">
-            <p>Developed By: Manish Jaiswal</p>
+            <p>
+              Developed By: Manish Jaiswal | Contact: {' '}
+              <a
+                href="mailto:manish.rokks@gmail.com"
+                className="text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                manish.rokks@gmail.com
+              </a>
+            </p>
           </div>
         </div>
       </footer>
