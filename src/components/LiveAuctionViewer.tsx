@@ -281,18 +281,19 @@ const LiveAuctionViewer: React.FC = () => {
         {/* Current Player or Completion Status */}
         {currentPlayer ? (
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
-            {isShuffling ? (
-              /* Shuffling State - Show shuffling indicator */
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-lg font-medium animate-bounce mb-2">
-                    🎲 Selecting Next Player...
+            <div className="min-h-[120px] flex items-center">
+              {isShuffling ? (
+                /* Shuffling State - Show shuffling indicator */
+                <div className="flex items-center justify-center w-full">
+                  <div className="text-center">
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 text-lg font-medium animate-bounce mb-2">
+                      🎲 Selecting Next Player...
+                    </div>
+                    <p className="text-sm text-gray-600">Please wait while the next player is being selected</p>
                   </div>
-                  <p className="text-sm text-gray-600">Please wait while the next player is being selected</p>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
+              ) : (
+                <div className="flex items-center justify-between w-full">
                 {/* Bid Information - Far Left */}
                 <div className="text-left flex-shrink-0">
                   {displayBid ? (
@@ -353,8 +354,9 @@ const LiveAuctionViewer: React.FC = () => {
                     />
                   </div>
                 </div>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           /* Auction Completed Banner */

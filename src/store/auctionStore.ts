@@ -145,8 +145,8 @@ export const useAuctionStore = create<AuctionStore>()(
           unsoldPlayerReturnRound: 1,
           enableTimer: true,
           timerDuration: 30,
-          minimumBid: 100,
-          bidIncrement: 100, // Default bid increment same as minimum bid
+          minimumBid: 10000000, // ₹1 crore
+          bidIncrement: 10000000, // ₹1 crore - Default bid increment same as minimum bid
           hidePricesInLiveView: false,
           hideUnsoldStatusInLiveView: true, // Default to hiding unsold status for cleaner live view
         };
