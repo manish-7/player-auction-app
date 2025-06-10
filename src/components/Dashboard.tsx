@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff, Save } from 'lucide-react';
+import { Trophy, Users, DollarSign, Download, RotateCcw, BarChart3, Eye, EyeOff, Save, List } from 'lucide-react';
 import { useAuctionStore } from '../store/auctionStore';
 import { formatCurrency, exportAuctionResults } from '../utils/excelUtils';
 import type { Team, Player } from '../types';
@@ -13,7 +13,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => {
   const { tournament, saveCurrentAuction } = useAuctionStore();
-  const [activeTab, setActiveTab] = useState<'teams' | 'players' | 'stats'>('teams');
+  const [activeTab, setActiveTab] = useState<'teams' | 'squads' | 'players' | 'stats'>('teams');
   const [showPrices, setShowPrices] = useState(true);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
@@ -176,6 +176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'teams', label: 'Team Squads', icon: Users },
+              { id: 'squads', label: 'Squad Overview', icon: List },
               { id: 'players', label: 'Player Results', icon: Trophy },
               { id: 'stats', label: 'Statistics', icon: BarChart3 },
             ].map(({ id, label, icon: Icon }) => (
@@ -304,6 +305,61 @@ const Dashboard: React.FC<DashboardProps> = ({ onRestart, onNewTournament }) => 
                     </div>
                   ) : (
                     <p className="text-gray-500 text-center py-4">No players in this team</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Squad Overview Tab */}
+          {activeTab === 'squads' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {tournament.teams.map((team) => (
+                <div key={team.id} className="border border-gray-200 rounded-lg p-4 h-fit">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{team.name}</h3>
+                    <div className="text-sm text-gray-500">
+                      {team.players.length}/{team.maxPlayers} players
+                    </div>
+                  </div>
+
+                  {team.players.length > 0 ? (
+                    <div className="space-y-2">
+                      {team.players
+                        .sort((a, b) => {
+                          // First sort by captain status (captains first)
+                          if (a.isCaptain && !b.isCaptain) return -1;
+                          if (!a.isCaptain && b.isCaptain) return 1;
+                          // Then sort alphabetically by name
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map((player) => (
+                          <div
+                            key={player.id}
+                            className="flex items-center space-x-2 p-2 bg-gray-50 rounded text-sm"
+                          >
+                            <PlayerImage
+                              imageUrl={player.imageUrl}
+                              playerName={player.name}
+                              size="sm"
+                              className="flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 truncate">
+                                {player.name}
+                                {player.isCaptain && (
+                                  <span className="text-xs font-bold text-blue-600 ml-1">(C)</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {player.role || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4 text-sm">No players in this team</p>
                   )}
                 </div>
               ))}
